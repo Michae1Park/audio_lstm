@@ -65,6 +65,7 @@ NUM_TIME_SAMPLE = 91 #Number of total time samples
 WINDOW_SIZE_IN = 5
 WINDOW_SIZE_OUT = 1 
 LOAD_WEIGHT = 1
+NUM_STEP_SHOW = 86
 
 def create_model():
     # DROPOUT = 0.5
@@ -113,7 +114,7 @@ def normalize(y):
     min_y = np.min(y)
     max_y = np.max(y)
     y = (y - min_y) / (max_y - min_y)
-    print y.dtype, min_y, max_y
+    #print y.dtype, min_y, max_y
     return y, min_y, max_y
 
 def scale_back(seq, min_y, max_y):
@@ -137,10 +138,9 @@ def image_to_tensor():
     print samples.shape
     return samples
 
-def audio_to_tensor():
+def audio_to_tensor(audio_filename):
     #these data have to be in same length
     # audio_filename = ['data1crop4.wav', 'data2crop4.wav', 'data5crop4.wav']
-    audio_filename = AUDIO_FILENAME
     audio_dataX = []
     audio_dataY = []
 
@@ -165,9 +165,9 @@ def audio_to_tensor():
 
     return sr, audio_dataX, min_audio_dataX, max_audio_dataX, audio_dataY, min_audio_dataY, max_audio_dataY
 
-def create_data(n_pre, n_post):
+def create_data(n_pre, n_post, audio_filename):
     if AUDIO_DATA == 1:
-        sr, audio_dataX, min_audio_dataX, max_audio_dataX, audio_dataY, min_audio_dataY, max_audio_dataY = audio_to_tensor()  #returns normalized data packed in correct dim
+        sr, audio_dataX, min_audio_dataX, max_audio_dataX, audio_dataY, min_audio_dataY, max_audio_dataY = audio_to_tensor(audio_filename)  #returns normalized data packed in correct dim
     if IMAGE_DATA == 1:
         image_data = image_to_tensor()  #returns normalized data packed in correct dim
 
@@ -196,7 +196,7 @@ def invlogamplitude(S):
 #"""librosa.logamplitude is actually 10_log10, so invert that."""
     return 10.0**(S/10.0)
 
-def reconstruct_audio(mfccs, sr):
+def reconstruct_audio(mfccs, sr, y_shape):
     #build reconstruction mappings
     n_mfcc = mfccs.shape[0]
     n_mel = 128
@@ -209,9 +209,9 @@ def reconstruct_audio(mfccs, sr):
     #Reconstruct the approximate STFT squared-magnitude from the MFCCs.
     recon_stft = bin_scaling[:, np.newaxis] * np.dot(mel_basis.T, invlogamplitude(np.dot(dctm.T, mfccs)))
     #Impose reconstructed magnitude on white noise STFT.
-    tot_timeseq = 42
-    y = np.zeros((N_MFCC,tot_timeseq))
-    excitation = np.random.randn(y.shape[0])
+    #tot_timeseq = 91
+    #y = np.zeros((N_MFCC,tot_timeseq))
+    excitation = np.random.randn(y_shape)
     E = librosa.stft(excitation)
     recon = librosa.istft(E/np.abs(E)*np.sqrt(recon_stft))
     #print recon
@@ -228,29 +228,35 @@ def test_prediction():
     # n_pre = N_PRE
     # n_post = N_POST
 
-    print('creating dataset...')
-    sr, audio_dataX, min_audio_dataX, max_audio_dataX, audio_dataY, min_audio_dataY, max_audio_dataY = create_data(WINDOW_SIZE_IN, WINDOW_SIZE_OUT)
+    # print('creating dataset...')
+    # sr, audio_dataX, min_audio_dataX, max_audio_dataX, audio_dataY, min_audio_dataY, max_audio_dataY = create_data(WINDOW_SIZE_IN, WINDOW_SIZE_OUT, AUDIO_FILENAME)
     # create and fit the LSTM network
     print('creating model...')
     model = create_model()
-    # #Train LSTM
-    #print('training model...')
+    # #Train print
+    #LSTM('training model...')
     #train_model(model, audio_dataX, audio_dataY)
     
-    print 'audio shape prediction'
-    print audio_dataX.shape
-    # ********************************************************#
+    # ******************************************************** #
     # Testing Phase - Just comment out the train_model function
-    datain = audio_dataX[0:42,:,:]
+    # Prepare Testing Data
+    sr, audio_dataX, min_audio_dataX, max_audio_dataX, audio_dataY, min_audio_dataY, max_audio_dataY = create_data(WINDOW_SIZE_IN, WINDOW_SIZE_OUT, ['data5crop4.wav'])
+    #datain = audio_dataX[0:NUM_STEP_SHOW,:,:]
+    datain = audio_dataX
+    print 'shape?'
+    print datain.shape
+    y_shape = 512*(NUM_STEP_SHOW-1)
+
     audio_predict = model.predict(datain)
     audio_predict = np.rollaxis(audio_predict, 1, 0) # (array, axis, start=0)
-
+    print 'predicted test data'
     print audio_predict.shape
-
-    print audio_dataX.shape
-    
+    # y, sr = librosa.load(SOUND_FOLDER + 'data5crop4.wav', mono=True)
+    # mfccs = librosa.feature.mfcc(y, n_mfcc=N_MFCC) #default hop_length=512
+    print audio_predict
     audio_predict = scale_back(audio_predict, min_audio_dataX, max_audio_dataX)
-    reconstruct_audio(audio_predict, sr)
+    print audio_predict
+    reconstruct_audio(audio_predict, sr, y_shape)
 
     # *********** Plotting Not Necessary ********* #
     # now plot
