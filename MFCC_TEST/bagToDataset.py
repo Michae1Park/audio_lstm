@@ -32,14 +32,13 @@
 # Or Run, rosbag record -O file.bag /hrl_manipulation_task/wrist_audio
 # Run this Script to reconstruct the Audio Wav from data collected in rosbag
 
-
 # Start up ROS pieces.
 PKG = 'my_package'
 # import roslib; roslib.load_manifest(PKG)
 import rosbag
 import rospy
 import os, copy, sys
-
+import librosa
 ## from hrl_msgs.msg import FloatArray
 ## from std_msgs.msg import Float64
 from hrl_anomaly_detection.msg import audio
@@ -63,74 +62,80 @@ def dataset_creator():
     FORMAT = pyaudio.paInt16
     CHANNELS = 2
     RATE = 44100
-    RECORD_SECONDS = 3 #needs to be dynamic, length of audio data should be equal
+    RECORD_SECONDS = 5 #needs to be dynamic, length of audio data should be equal
 
-    bag_files = ['data1.bag', 'data2.bag', 'data3.bag', 'data4.bag', 'data5.bag']
+    # bag_files = ['data1', 'data2', 'data3', 'data4', 'data5']
+    # file_length = [5, 3, 3, 3, 3]
 
-    static_ar = []
-    dynamic_ar = []
-    audio_store = []
-    audio_samples = []
-    time_store = []
+    bag_files = {'data1':5, 'data2':3, 'data3':3, 'data4':3, 'data5':3}
+
+    # for bagfile in bag_files:
+    # bagfile = 'data1.bag'
+    # wavfile = 'data1.wav'
     for bagfile in bag_files:
-        for topic, msg, t in rosbag.Bag('./bagfiles/'+bagfile).read_messages():
+        static_ar = []
+        dynamic_ar = []
+        audio_store = []
+        audio_samples = []
+        time_store = []
+        for topic, msg, t in rosbag.Bag('./bagfiles/'+bagfile+'.bag').read_messages():
             #print msg
             if msg._type == 'hrl_anomaly_detection/audio':
                 audio_store.append(np.array(msg.audio_data, dtype=np.int16))
             elif msg._type == 'visualization_msgs/Marker':
                 if msg.id == 0: #id 0 = static
-                    static_ar.append(np.array(msg.pose.position))#, dtype=np.float64))
+                    static_ar.append([msg.pose.position.x, msg.pose.position.y, msg.pose.position.z])
                 elif msg.id == 9: #id 9 = dynamic
-                    dynamic_ar.append(np.array(msg.pose.position))#, dtype=np.float64))
+                    dynamic_ar.append([msg.pose.position.x, msg.pose.position.y, msg.pose.position.z])
             time_store.append(t)
-        audio_samples.append(audio_store)
+        static_ar = np.array(static_ar, dtype=np.float64)
+        dynamic_ar = np.array(dynamic_ar, dtype=np.float64)
 
+        #********** AR TAG processing *********#
+        if len(static_ar)<len(dynamic_ar):
+            ar_length = len(static_ar) 
+        else:
+            ar_length = len(dynamic_ar)
 
+        static_ar = static_ar[0:ar_length]
+        dynamic_ar = dynamic_ar[0:ar_length]
 
-    # if(cnt):
-    #     static = static[:-1] #static or dynamic whichever was collected first, look at AR tag number
-    #     audio = audio[:-1]
+        relative_position = []
+        for i in range(ar_length):
+            relative_position.append(static_ar[i] - dynamic_ar[i])
+        relative_position = np.array(relative_position)
+        print relative_position.shape
+        np.savetxt('./csv/' + bagfile + '.txt', relative_position)
+        # a = np.loadtxt('./csv/' + bagfile + '.txt')
+        # print a
 
-    # relative = static-dynamic
+        ##**** Audio Processing ****##
+        #copy the frame and insert to lengthen
+        data_store_long = []
+        baglen = len(audio_store)
+        RECORD_SECONDS = bag_files[bagfile]
+        num_frames = RATE/CHUNK * RECORD_SECONDS
+        recovered_len = num_frames/baglen
 
-    ##**** Audio Processing ****##
-    #copy the frame and insert to lengthen
-    data_store_long = []
-    baglen = len(audio_store)
-    num_frames = RATE/CHUNK * RECORD_SECONDS
-    recovered_len = num_frames/baglen
+        for frame in audio_store:
+            for i in range(0, recovered_len): 
+                data_store_long.append(frame)
 
-    for frame in audio_store:
-        for i in range(0, recovered_len): ##This happens to work cuz recovered len is 2 and num of channels is 2 ???
-            data_store_long.append(frame)
+        #print data_store_long
+        numpydata = np.hstack(data_store_long)
+        numpydata = np.reshape(numpydata, (len(numpydata)/CHANNELS, CHANNELS))    
 
-    print data_store_long
-    numpydata = np.hstack(data_store_long)
-    numpydata = np.reshape(numpydata, (len(numpydata)/CHANNELS, CHANNELS))    
+        #***** Note that this is not enough!!! *******#
+        # 1) Must clean up code
+        # 2) Must combine audio_cropper functionality for generating training & prediction data
+        # 3) save CSV
 
-    wav.write('test.wav', RATE, numpydata)
+        #print numpydata
+        wav.write('./bagfiles/'+bagfile+'.wav', RATE, numpydata)
 
-    # for audio_file in audio_filename:
-    #     y, sr = librosa.load(audio_file, mono=True)
-    #     print y.shape
-
-    #     #first divide into time chunks then convert to mfcc
-    #     #Without Converting to Binary
-    #     mfccs = librosa.feature.mfcc(y, n_mfcc=2) #default hop_length=512
-    #     # print mfccs
-    #     # print mfccs.shape
-        
-    #     # normalize - for feeding into LSTM
-    #     min_mfcc = np.min(mfccs)
-    #     max_mfcc = np.max(mfccs)
-    #     mfccs = (mfccs - min_mfcc) / (max_mfcc - min_mfcc)
-    #     print mfccs.dtype, min_mfcc, max_mfcc
-
-    #     print mfccs
-    #     print mfccs.shape
-
-    ##**** Image Processing ****##
-
+        y,sr = librosa.load('./bagfiles/'+bagfile+'.wav', mono=True)
+        #print y
+        #print np.max(y)
 
 def main():
     rospy.init_node(PKG)
