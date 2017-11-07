@@ -31,7 +31,7 @@ np.random.seed(7)
 # dataset = dataframe.values
 # dataset = dataset.astype('float32')
 
-y, sr = librosa.load('./data/data1.wav', sr=8000)
+y, sr = librosa.load('./data/data13.wav', sr=8000)
 dataset = y
 print dataset.shape
 
@@ -51,7 +51,7 @@ scaler = MinMaxScaler(feature_range=(0, 1))
 dataset = scaler.fit_transform(dataset)
 
 # split into train and test sets
-train_size = int(len(dataset) * 0.67)
+train_size = int(len(dataset) * 0.1)
 test_size = len(dataset) - train_size
 train, test = dataset[0:train_size,:], dataset[train_size:len(dataset),:]
 
@@ -69,12 +69,77 @@ model = Sequential()
 model.add(LSTM(4, input_shape=(look_back, 1)))
 model.add(Dense(1))
 model.compile(loss='mean_squared_error', optimizer='adam')
-model.fit(trainX, trainY, nb_epoch=100, batch_size=1, verbose=2)
-model.save_weights('./models/my_model_weights.h5')
+# model.fit(trainX, trainY, nb_epoch=100, batch_size=1, verbose=2)
+# model.save_weights('./models/my_model_weights.h5')
+model.load_weights('./models/my_model_weights_onemicrowave_lookback3.h5')
 
-# make predictions
+#--------Insert Sequence Prediction part -------
+print testX.shape
+
+# make predictions - Original
 trainPredict = model.predict(trainX)
-testPredict = model.predict(testX)
+testPredict = model.predict(testX) 	
+print testPredict.shape
+
+# make predictions - Sequence by Sequence
+seq = []
+flag = True
+for x in testX:
+	x = np.expand_dims(x, axis=0)
+	testPredict = model.predict(x)
+	if flag:
+		seq = testPredict
+		flag = False
+	else:
+		seq = np.vstack((seq,testPredict))
+testPredict = np.array(seq)
+print testPredict.shape
+
+# make predictions - Prediction Based
+# seq = []
+# flag = 0
+# x_f = [] #contains the first three elements in the first window
+# x_n = []
+# t_p = []
+# for x in testX:
+# 	if flag == 0:
+# 		x_f = x
+# 		x_f = np.expand_dims(x_f, axis=0)
+# 		testPredict = model.predict(x_f)
+# 		x_n = testPredict
+# 		seq = testPredict	
+# 		flag = 1
+# 	elif flag == 1:
+# 		x_f = x_f[:,1:3,:]
+# 		x_n = np.expand_dims(x_n, axis=1)
+# 		x_n = np.concatenate((x_f, x_n), axis=1)
+# 		testPredict = model.predict(x_n)
+# 		t_p = testPredict
+# 		seq = np.vstack((seq, testPredict))
+# 		flag = 2
+# 	elif flag == 2:
+# 		x_f = x_f[:,2:3,:]
+# 		first = np.expand_dims(first, axis=1)
+# 		first = np.concatenate((x_f, first), axis=1)
+# 		testPredict = model.predict(first)
+# 		first = testPredict
+# 		seq = np.vstack((seq,testPredict))
+# 		flag = 3
+# 	elif flag == 3:
+# 		x_f = x_f[:,3:3,:]
+# 		first = np.expand_dims(first, axis=1)
+# 		first = np.concatenate((x_f, first), axis=1)
+# 		testPredict = model.predict(first)
+# 		first = testPredict
+# 		seq = np.vstack((seq,testPredict))
+# 		flag = 4
+# 	else:
+# 		print 'c'
+
+# testPredict = np.array(seq)
+# print testPredict.shape
+
+#-----------------------------------------
 
 # invert predictions
 trainPredict = scaler.inverse_transform(trainPredict)
@@ -103,3 +168,6 @@ plt.plot(scaler.inverse_transform(dataset))
 plt.plot(trainPredictPlot)
 plt.plot(testPredictPlot)
 plt.show()
+
+librosa.output.write_wav('./data/data13_predicted', testPredict, 8000)
+
