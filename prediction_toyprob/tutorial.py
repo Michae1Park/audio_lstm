@@ -122,14 +122,18 @@ dataset = dataset.astype('float32')
 print 'dataset shape'
 print dataset.shape
 
-# normalize the dataset
-scaler = MinMaxScaler(feature_range=(0, 1))
-dataset1 = scaler.fit_transform(dataset[0])
-dataset2 = scaler.fit_transform(dataset[1])
-
+# normalize the dataset - scaler per feature
+scaler1 = MinMaxScaler(feature_range=(0, 1))
+dataset1 = scaler1.fit_transform(dataset[0])
+scaler2 = MinMaxScaler(feature_range=(0, 1))
+dataset2 = scaler2.fit_transform(dataset[1])
 print 'scaler'
 print dataset1.shape, dataset2.shape
+dataset = np.vstack((dataset1, dataset2))
 
+#shape back 
+dataset = np.swapaxes(dataset, 0,1)
+print dataset.shape
 # split into train and test sets
 train_size = int(len(dataset) * 0.67)
 test_size = len(dataset) - train_size
@@ -150,23 +154,27 @@ model.add(LSTM(4, input_shape=(look_back, 1)))
 model.add(Dense(1))
 model.compile(loss='mean_squared_error', optimizer='adam')
 model.fit(trainX, trainY, nb_epoch=100, batch_size=1, verbose=2)
-model.save_weights('./models/my_model_weights_sincos.h5')
+model.save_weights('./models/my_model_weights_sin_cos.h5')
+
+#-------------------Below need modification, use trained model-----------------------
 
 # make predictions
 trainPredict = model.predict(trainX)
 testPredict = model.predict(testX)
 
 # invert predictions
-trainPredict = scaler.inverse_transform(trainPredict)
-trainY = scaler.inverse_transform([trainY])
-testPredict = scaler.inverse_transform(testPredict)
-testY = scaler.inverse_transform([testY])
+trainPredict1 = scaler1.inverse_transform(trainPredict[0])
+trainPredict2 = scaler2.inverse_transform(trainPredict[1])
+# trainY = scaler.inverse_transform([trainY])
+testPredict1 = scaler1.inverse_transform(testPredict[0])
+testPredict2 = scaler2.inverse_transform(testPredict[1])
+# testY = scaler.inverse_transform([testY])
 
 # calculate root mean squared error
-trainScore = math.sqrt(mean_squared_error(trainY[0], trainPredict[:,0]))
-print('Train Score: %.2f RMSE' % (trainScore))
-testScore = math.sqrt(mean_squared_error(testY[0], testPredict[:,0]))
-print('Test Score: %.2f RMSE' % (testScore))
+# trainScore = math.sqrt(mean_squared_error(trainY[0], trainPredict[:,0]))
+# print('Train Score: %.2f RMSE' % (trainScore))
+# testScore = math.sqrt(mean_squared_error(testY[0], testPredict[:,0]))
+# print('Test Score: %.2f RMSE' % (testScore))
 
 # shift train predictions for plotting
 trainPredictPlot = np.empty_like(dataset)
