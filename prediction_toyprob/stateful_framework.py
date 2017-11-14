@@ -34,15 +34,16 @@ NB_EPOCH = 100
 N_NEURONS = 100
 
 def main():
-	lstm_model = define_network(BATCH_SIZE, TIMESTEP_IN, INPUT_DIM, N_NEURONS)
-	lstm_model = fit_lstm(lstm_model)
+	# lstm_model = define_network(BATCH_SIZE, TIMESTEP_IN, INPUT_DIM, N_NEURONS)
+	# lstm_model = fit_lstm(lstm_model)
 	#predict
 	new_model = Sequential()
 	new_model.add(LSTM(N_NEURONS, batch_input_shape=(1, TIMESTEP_IN, INPUT_DIM), stateful=True))
 	new_model.add(Dense(10))
 	new_model.add(Activation('sigmoid')) #range [0,1], tanh=[-1,1]
-	old_weights = lstm_model.get_weights()
-	new_model.set_weights(old_weights)
+	# old_weights = lstm_model.get_weights()
+	# new_model.set_weights(old_weights)
+	new_model.load_weights('./models/stateful.h5')
 	new_model.compile(loss='mean_squared_error', optimizer='adam')
 	
 	dataset = []
@@ -69,9 +70,10 @@ def main():
 		rst.append(tmp)
 	rst = np.array(rst)
 	print rst.shape
+	rst = scale_back(rst, vmin, vmax)
 	#plot -> predicted and dataset and compare result
 	pyplot.plot(dataset)
-	for i in range(rst.shape[0]):
+	for i in range(10,rst.shape[0]):
 		xaxis = [x for x in range(i, i+10)]
 		pyplot.plot( xaxis ,rst[i,0,:], color='red')
 	# for i in range(rst.shape[0]):
@@ -106,6 +108,11 @@ def fit_lstm(model):
 		model.reset_states() #reset for every epoch
 	model.save_weights('./models/stateful.h5')
 	return model
+
+def scale_back(seq, min_y, max_y):
+    # scale back 
+    seq = seq * (max_y - min_y) + min_y
+    return seq
 
 def normalize(data):
     a_max = np.max(data)
