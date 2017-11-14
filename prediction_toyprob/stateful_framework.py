@@ -71,17 +71,17 @@ def main():
 	rst = np.array(rst)
 	print rst.shape
 	rst = scale_back(rst, vmin, vmax)
+	X = scale_back(X, vmin, vmax)
+	for i in range(rst.shape[0]):
+		xaxis = [x for x in range(i, i+TIMESTEP_OUT)]
+		pyplot.plot(xaxis, X[i,0,:,0], color='blue')
+		xaxis2 = [x for x in range(i+TIMESTEP_IN, i+TIMESTEP_IN+TIMESTEP_OUT)]
+		pyplot.plot( xaxis2 ,rst[i,0,:], color='red')
 	#plot -> predicted and dataset and compare result
-	pyplot.plot(dataset)
-	for i in range(10,rst.shape[0]):
-		xaxis = [x for x in range(i, i+10)]
-		pyplot.plot( xaxis ,rst[i,0,:], color='red')
-	# for i in range(rst.shape[0]):
-	# 	off_s = len(series) - n_test + i - 1
-	# 	off_e = off_s + len(forecasts[i]) + 1
-	# 	xaxis = [x for x in range(off_s, off_e)]
-	# 	yaxis = [series.values[off_s]] + forecasts[i]
-	# 	pyplot.plot(xaxis, yaxis, color='red')
+	# pyplot.plot(dataset)
+	# for i in range(20, rst.shape[0]):
+	# 	xaxis = [x for x in range(i, i+TIMESTEP_OUT)]
+	# 	pyplot.plot( xaxis ,rst[i,0,:], color='red')
 	pyplot.show()
 
 def define_network(batch_size, timesteps, input_dim, n_neurons):
