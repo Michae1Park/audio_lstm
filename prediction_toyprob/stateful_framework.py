@@ -27,7 +27,8 @@ import matplotlib.animation as animation
 
 #Use these config only in main
 BATCH_SIZE = 256
-TIMESTEP_IN = 10
+PRED_BATCH_SIZE = 1
+TIMESTEP_IN = 1
 TIMESTEP_OUT = 10
 INPUT_DIM = 1
 NB_EPOCH = 1000
@@ -38,7 +39,7 @@ LOAD_WEIGHT = True
 def main():
 	lstm_model = define_network(BATCH_SIZE, TIMESTEP_IN, INPUT_DIM, N_NEURONS, False)
 	print lstm_model.summary()
-	lstm_model = fit_lstm(lstm_model)
+	# lstm_model = fit_lstm(lstm_model)
 	#predict
 	new_model = define_network(1, TIMESTEP_IN, INPUT_DIM, N_NEURONS, LOAD_WEIGHT)
 	
@@ -54,10 +55,17 @@ def main():
 
 	dataset = []
 	t = np.linspace(0.0, np.pi*2.0, 100)
+	# Test1
 	# x1 = 0.8*np.cos(t+TEST_SHIFT) + np.random.normal(-0.03, 0.03, np.shape(t) ) + 0.05
 	# x2 = 0.8*np.sin(t+TEST_SHIFT) + np.random.normal(-0.03, 0.03, np.shape(t) ) + 0.05
-	x1 = 0.75*np.cos(t)
-	x2 = 0.75*np.sin(t)
+	# Test2
+	x1 = 0.75*np.cos(0.7*t) + np.random.normal(-0.03, 0.03, np.shape(t) )
+	x2 = 0.75*np.sin(0.7*t) + np.random.normal(-0.03, 0.03, np.shape(t) )
+	x1 = np.concatenate(([0.75,0.75,0.75,0.75,0.75,0.75,0.75,0.75,0.75,0.75,0.75,0.75,0.75,0.75,0.75,0.75,0.75,0.75], x1))
+	x2 = np.concatenate(([0.75,0.75,0.75,0.75,0.75,0.75,0.75,0.75,0.75,0.75,0.75,0.75,0.75,0.75,0.75,0.75,0.75,0.75], x2))
+	# Test3
+	# x1 = 0.8*np.cos(t)
+	# x2 = 0.8*np.sin(t)
 	dataset.append(x1)
 	dataset.append(x2)
 	dataset = np.array(dataset)
@@ -69,30 +77,36 @@ def main():
 		y.append(dataset[i+TIMESTEP_IN:i+TIMESTEP_IN+TIMESTEP_OUT])
 	X = np.array(X)
 	y = np.array(y)
-	X = X.reshape(X.shape[0],1,10,1)
+	X = X.reshape(X.shape[0], PRED_BATCH_SIZE, TIMESTEP_IN, INPUT_DIM)
 	# X = X.reshape(X.shape[0], 1, X.shape[1])
 	print 'prediction X, y shape'
 	print X.shape, y.shape
 	X, vmax, vmin = normalize(X) #valid max min
 	rst = []
-	x_tmp = X[0]
+	# x_tmp = X[0]
 	for i in range(0, X.shape[0]):
-		p_tmp = new_model.predict(x_tmp, batch_size=1)
+		p_tmp = new_model.predict(X[i], batch_size=PRED_BATCH_SIZE)
 		rst.append(p_tmp)
-		p_tmp = p_tmp.reshape(p_tmp.shape[0], p_tmp.shape[1], 1)
-		x_tmp = np.concatenate((x_tmp[:,1:x_tmp.shape[1],:], p_tmp[:,0:1,:]), axis=1)
-		print x_tmp
+		# p_tmp = p_tmp.reshape(p_tmp.shape[0], p_tmp.shape[1], 1)
+		# x_tmp = p_tmp
+		# x_tmp = np.concatenate((x_tmp[:,1:x_tmp.shape[1],:], p_tmp[:,0:1,:]), axis=1)
+		# print 'x_tmp'
+		# print x_tmp
+		# print 'p_tmp'
+		# print p_tmp
 	rst = np.array(rst)
 	print rst.shape
 	rst = scale_back(rst, vmin, vmax)
 	X = scale_back(X, vmin, vmax)
+
+	pyplot.plot(X[:,0,:,0]) #Original Plot for OneToMany
 	for i in range(0, rst.shape[0]):
-		xaxis = [x for x in range(i, i+TIMESTEP_OUT)]
-		pyplot.plot(xaxis, X[i,0,:,0], color='blue')
-		# pyplot.plot(xaxis, X[i,0,:], color='blue')
+		# xaxis = [x for x in range(i, i+TIMESTEP_IN)]
+		# pyplot.plot(xaxis, X[i,0,:,0], color='blue')
+		# pyplot.plot(xaxis, X[i,0,:], color='blue') #2D Dense Plot
 		xaxis2 = [x for x in range(i+TIMESTEP_IN, i+TIMESTEP_IN+TIMESTEP_OUT)]
 		pyplot.plot( xaxis2 ,rst[i,0,:], color='red')
-		# pyplot.plot(xaxis2 ,rst[i,0,:], color='red')
+		# pyplot.plot(xaxis2 ,rst[i,0,:], color='red') #2D Dense Plot
 	pyplot.show()
 
 def define_network(batch_size, timesteps, input_dim, n_neurons, load_weight=False):
@@ -105,7 +119,8 @@ def define_network(batch_size, timesteps, input_dim, n_neurons, load_weight=Fals
 		# new_model.load_weights('./models/stateful1-scaleFix.h5')
 		# new_model.load_weights('./models/stateful1-1.h5') #reproduce can't beleive time start shift works better-confirmed
 		# new_model.load_weights('./models/stateful2.h5')
-		model.load_weights('./models/stateful2-scaleFix.h5')
+		# model.load_weights('./models/stateful2-scaleFix.h5')
+		model.load_weights('./models/stateful-OneToMany.h5')
 	model.compile(loss='mean_squared_error', optimizer='adam')
 	return model
 
@@ -115,7 +130,7 @@ def fit_lstm(model):
 		#For 1D
 		X = X[:,:,:,0]
 		y = y[:,:,:,0]
-		X = X.reshape(X.shape[0],X.shape[1],X.shape[2],1)
+		X = X.reshape(X.shape[0],X.shape[1],X.shape[2],INPUT_DIM)
 		# y = y.reshape(y.shape[0],y.shape[1],y.shape[2],1)
 		print X.shape, y.shape
 		X, dmax, dmin = normalize(X) #dummy max, dummy min
@@ -128,7 +143,8 @@ def fit_lstm(model):
 	# model.save_weights('./models/stateful1-scaleFix.h5')
 	# model.save_weights('./models/stateful1-1.h5')
 	# model.save_weights('./models/stateful2.h5') #adds shifted starting point in training
-	model.save_weights('./models/stateful2-scaleFix.h5') #adds shifted starting point in training
+	# model.save_weights('./models/stateful2-scaleFix.h5') #adds shifted starting point in training
+	model.save_weights('./models/stateful-OneToMany.h5') #adds shifted starting point in training
 	return model
 
 def scale_back(seq, min_y, max_y):
@@ -139,8 +155,6 @@ def scale_back(seq, min_y, max_y):
 def normalize(data):
     a_max = np.max(data)
     a_min =  np.min(data)
-    a_max = 1.1*a_max
-    a_min = 1.1*a_min
     data = (data - a_min) / (a_max - a_min)
     return data, a_max, a_min
 
