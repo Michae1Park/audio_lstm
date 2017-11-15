@@ -32,34 +32,32 @@ TIMESTEP_OUT = 10
 INPUT_DIM = 1
 NB_EPOCH = 1000
 N_NEURONS = 10
-TEST_SHIFT = -15
+TEST_SHIFT = 0
+LOAD_WEIGHT = True
 
 def main():
-	lstm_model = define_network(BATCH_SIZE, TIMESTEP_IN, INPUT_DIM, N_NEURONS)
-	print 'model sum'
+	lstm_model = define_network(BATCH_SIZE, TIMESTEP_IN, INPUT_DIM, N_NEURONS, False)
 	print lstm_model.summary()
-	# lstm_model = fit_lstm(lstm_model)
-
+	lstm_model = fit_lstm(lstm_model)
 	#predict
-	new_model = Sequential()
-	new_model.add(LSTM(N_NEURONS, batch_input_shape=(1, TIMESTEP_IN, INPUT_DIM), stateful=True, activation='sigmoid'))
-	# new_model.add(Dense(10, input_shape=(TIMESTEP_IN,), activation='sigmoid'))
-	# new_model.add(Activation('sigmoid')) #range [0,1], tanh=[-1,1]
-	# old_weights = lstm_model.get_weights()
-	# new_model.set_weights(old_weights)
-	# new_model.load_weights('./models/stateful.h5')
-	# new_model.load_weights('./models/stateful1-scaleFix.h5')
-	# new_model.load_weights('./models/stateful1-1.h5') #reproduce can't beleive time start shift works better-confirmed
-	# new_model.load_weights('./models/stateful2.h5')
-	new_model.load_weights('./models/stateful2-scaleFix.h5')
-	new_model.compile(loss='mean_squared_error', optimizer='adam')
+	new_model = define_network(1, TIMESTEP_IN, INPUT_DIM, N_NEURONS, LOAD_WEIGHT)
 	
+	# test_X, test_y = data_generator()
+	# test_X = np.array(test_X)
+	# print 'TESTSET Generated'
+	# print test_X.shape
+	# for i in range(test_X.shape[0]):
+	# 	tmp = new_model.predict(test_X[i,0:1,:,:])
+	# 	print tmp.shape
+	# 	pyplot.plot(tmp[0,:,0])
+	# 	pyplot.show()
+
 	dataset = []
 	t = np.linspace(0.0, np.pi*2.0, 100)
-	x1 = 0.85*np.cos(t+TEST_SHIFT) + np.random.normal(-0.038, 0.038, np.shape(t) ) - 0.03
-	x2 = 0.85*np.sin(t+TEST_SHIFT) + np.random.normal(-0.038, 0.038, np.shape(t) ) - 0.03
-	# x1 = 0.75*np.cos(t)
-	# x2 = 0.75*np.sin(t)
+	# x1 = 0.8*np.cos(t+TEST_SHIFT) + np.random.normal(-0.03, 0.03, np.shape(t) ) + 0.05
+	# x2 = 0.8*np.sin(t+TEST_SHIFT) + np.random.normal(-0.03, 0.03, np.shape(t) ) + 0.05
+	x1 = 0.75*np.cos(t)
+	x2 = 0.75*np.sin(t)
 	dataset.append(x1)
 	dataset.append(x2)
 	dataset = np.array(dataset)
@@ -77,9 +75,13 @@ def main():
 	print X.shape, y.shape
 	X, vmax, vmin = normalize(X) #valid max min
 	rst = []
-	for i in range(X.shape[0]):
-		tmp = new_model.predict(X[i], batch_size=1)
-		rst.append(tmp)
+	x_tmp = X[0]
+	for i in range(0, X.shape[0]):
+		p_tmp = new_model.predict(x_tmp, batch_size=1)
+		rst.append(p_tmp)
+		p_tmp = p_tmp.reshape(p_tmp.shape[0], p_tmp.shape[1], 1)
+		x_tmp = np.concatenate((x_tmp[:,1:x_tmp.shape[1],:], p_tmp[:,0:1,:]), axis=1)
+		print x_tmp
 	rst = np.array(rst)
 	print rst.shape
 	rst = scale_back(rst, vmin, vmax)
@@ -91,18 +93,19 @@ def main():
 		xaxis2 = [x for x in range(i+TIMESTEP_IN, i+TIMESTEP_IN+TIMESTEP_OUT)]
 		pyplot.plot( xaxis2 ,rst[i,0,:], color='red')
 		# pyplot.plot(xaxis2 ,rst[i,0,:], color='red')
-	#plot -> predicted and dataset and compare result
-	# pyplot.plot(dataset)
-	# for i in range(20, rst.shape[0]):
-	# 	xaxis = [x for x in range(i, i+TIMESTEP_OUT)]
-	# 	pyplot.plot( xaxis ,rst[i,0,:], color='red')
 	pyplot.show()
 
-def define_network(batch_size, timesteps, input_dim, n_neurons):
+def define_network(batch_size, timesteps, input_dim, n_neurons, load_weight=False):
 	model = Sequential()
 	model.add(LSTM(n_neurons, batch_input_shape=(batch_size, timesteps, input_dim), stateful=True, activation='sigmoid'))
 	# model.add(Dense(10, input_shape=(timesteps,), activation='sigmoid'))
 	# model.add(Activation('sigmoid')) #range [0,1], tanh=[-1,1]
+	if load_weight:
+		# new_model.load_weights('./models/stateful.h5')
+		# new_model.load_weights('./models/stateful1-scaleFix.h5')
+		# new_model.load_weights('./models/stateful1-1.h5') #reproduce can't beleive time start shift works better-confirmed
+		# new_model.load_weights('./models/stateful2.h5')
+		model.load_weights('./models/stateful2-scaleFix.h5')
 	model.compile(loss='mean_squared_error', optimizer='adam')
 	return model
 
@@ -136,6 +139,8 @@ def scale_back(seq, min_y, max_y):
 def normalize(data):
     a_max = np.max(data)
     a_min =  np.min(data)
+    a_max = 1.1*a_max
+    a_min = 1.1*a_min
     data = (data - a_min) / (a_max - a_min)
     return data, a_max, a_min
 
