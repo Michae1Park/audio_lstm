@@ -39,30 +39,20 @@ LOAD_WEIGHT = True
 def main():
 	lstm_model = define_network(BATCH_SIZE, TIMESTEP_IN, INPUT_DIM, N_NEURONS, False)
 	print lstm_model.summary()
-	# lstm_model = fit_lstm(lstm_model)
+	lstm_model = fit_lstm(lstm_model)
 	#predict
 	new_model = define_network(1, TIMESTEP_IN, INPUT_DIM, N_NEURONS, LOAD_WEIGHT)
 	
-	# test_X, test_y = data_generator()
-	# test_X = np.array(test_X)
-	# print 'TESTSET Generated'
-	# print test_X.shape
-	# for i in range(test_X.shape[0]):
-	# 	tmp = new_model.predict(test_X[i,0:1,:,:])
-	# 	print tmp.shape
-	# 	pyplot.plot(tmp[0,:,0])
-	# 	pyplot.show()
-
 	dataset = []
 	t = np.linspace(0.0, np.pi*2.0, 100)
 	# Test1
-	# x1 = 0.8*np.cos(t+TEST_SHIFT) + np.random.normal(-0.03, 0.03, np.shape(t) ) + 0.05
-	# x2 = 0.8*np.sin(t+TEST_SHIFT) + np.random.normal(-0.03, 0.03, np.shape(t) ) + 0.05
+	x1 = 0.8*np.cos(t+TEST_SHIFT) + np.random.normal(-0.03, 0.03, np.shape(t) ) + 0.05
+	x2 = 0.8*np.sin(t+TEST_SHIFT) + np.random.normal(-0.03, 0.03, np.shape(t) ) + 0.05
 	# Test2
-	x1 = 0.75*np.cos(2*t) + np.random.normal(-0.03, 0.03, np.shape(t) )
-	x2 = 0.75*np.sin(2*t) + np.random.normal(-0.03, 0.03, np.shape(t) )
-	x1 = np.concatenate(([0.75,0.75,0.75,0.75,0.75,0.75,0.75,0.75,0.75,0.75,0.75,0.75,0.75,0.75,0.75,0.75,0.75,0.75], x1))
-	x2 = np.concatenate(([0.75,0.75,0.75,0.75,0.75,0.75,0.75,0.75,0.75,0.75,0.75,0.75,0.75,0.75,0.75,0.75,0.75,0.75], x2))
+	# x1 = 0.75*np.cos(2*t) + np.random.normal(-0.03, 0.03, np.shape(t) )
+	# x2 = 0.75*np.sin(2*t) + np.random.normal(-0.03, 0.03, np.shape(t) )
+	# x2 = np.concatenate(([0.75,0.75,0.75,0.75,0.75,0.75,0.75,0.75,0.75,0.75,0.75,0.75,0.75,0.75,0.75,0.75,0.75,0.75], x2))
+	# x1 = np.concatenate(([0.75,0.75,0.75,0.75,0.75,0.75,0.75,0.75,0.75,0.75,0.75,0.75,0.75,0.75,0.75,0.75,0.75,0.75], x1))
 	# Test3
 	# x1 = 0.8*np.cos(t)
 	# x2 = 0.8*np.sin(t)
@@ -82,7 +72,7 @@ def main():
 	print 'prediction X, y shape'
 	print X.shape, y.shape
 	print X, y
-	X, vmax, vmin = normalize(X) #valid max min
+	# X, vmax, vmin = normalize(X) #valid max min
 	rst = []
 	# x_tmp = X[0]
 	for i in range(0, X.shape[0]):
@@ -97,8 +87,8 @@ def main():
 		# print p_tmp
 	rst = np.array(rst)
 	print rst.shape
-	rst = scale_back(rst, vmin, vmax)
-	X = scale_back(X, vmin, vmax)
+	# rst = scale_back(rst, vmin, vmax)
+	# X = scale_back(X, vmin, vmax)
 
 	pyplot.plot(X[:,0,:,0]) #Original Plot for OneToMany
 	for i in range(0, rst.shape[0]):
@@ -112,7 +102,7 @@ def main():
 
 def define_network(batch_size, timesteps, input_dim, n_neurons, load_weight=False):
 	model = Sequential()
-	model.add(LSTM(n_neurons, batch_input_shape=(batch_size, timesteps, input_dim), stateful=True, activation='sigmoid'))
+	model.add(LSTM(n_neurons, batch_input_shape=(batch_size, timesteps, input_dim), stateful=True, activation='tanh'))
 	# model.add(Dense(10, input_shape=(timesteps,), activation='sigmoid'))
 	# model.add(Activation('sigmoid')) #range [0,1], tanh=[-1,1]
 	if load_weight:
@@ -121,7 +111,8 @@ def define_network(batch_size, timesteps, input_dim, n_neurons, load_weight=Fals
 		# model.load_weights('./models/stateful1-1.h5') #reproduce can't beleive time start shift works better-confirmed
 		# model.load_weights('./models/stateful2.h5')
 		# model.load_weights('./models/stateful2-scaleFix.h5')
-		model.load_weights('./models/stateful-OneToMany.h5')
+		# model.load_weights('./models/stateful-OneToMany.h5')
+		model.load_weights('./models/stateful-OneToMany-tanh.h5')
 		# model.load_weights('./models/non-stateful-OneToMany.h5')
 	model.compile(loss='mean_squared_error', optimizer='adam')
 	return model
@@ -135,8 +126,8 @@ def fit_lstm(model):
 		X = X.reshape(X.shape[0],X.shape[1],X.shape[2],INPUT_DIM)
 		# y = y.reshape(y.shape[0],y.shape[1],y.shape[2],1)
 		print X.shape, y.shape
-		X, dmax, dmin = normalize(X) #dummy max, dummy min
-		y, dmax, dmin = normalize(y)
+		# X, dmax, dmin = normalize(X) #dummy max, dummy min
+		# y, dmax, dmin = normalize(y)
 		print 'verbose training iteration' + str(i)
 		for j in range(X.shape[0]):
 			model.train_on_batch(X[j], y[j])
@@ -147,7 +138,8 @@ def fit_lstm(model):
 	# model.save_weights('./models/stateful2.h5') #adds shifted starting point in training
 	# model.save_weights('./models/stateful2-scaleFix.h5') #adds shifted starting point in training
 	# model.save_weights('./models/stateful-OneToMany.h5') #adds shifted starting point in training
-	model.save_weights('./models/non-stateful-OneToMany.h5')
+	model.save_weights('./models/stateful-OneToMany-tanh.h5')
+	# model.save_weights('./models/non-stateful-OneToMany.h5')
 	return model
 
 def scale_back(seq, min_y, max_y):
@@ -244,19 +236,9 @@ def generate_sincos():
 	X = np.rollaxis(X, 0, 3)
 	print X.shape
 
-	#Plot - Sanity Check
-	# t = np.linspace(0.0, np.pi*2.0, 100)
-	# font = {'size'   : 9}
-	# matplotlib.rc('font', **font)
-	# f0 = figure(num = 0, figsize = (12, 8))#, dpi = 100)
-	# f0.suptitle("feature plotting", fontsize=12)
-	# ax01 = subplot2grid((2, 1), (0, 0))
-	# ax02 = subplot2grid((2, 1), (1, 0))
-	# ax01.grid(True)
-	# ax01.plot(t, X[0,:,0])
-	# ax02.grid(True)
-	# ax02.plot(t, X[0,:,1])
-	# plt.show()
+	# for i in range(batch_size):
+	# 	pyplot.plot(X[i,:,0])
+	# pyplot.show()
 
 	X = X.astype('float32')
 	return X
