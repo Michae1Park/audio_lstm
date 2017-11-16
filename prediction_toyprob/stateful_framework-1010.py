@@ -10,6 +10,7 @@ from keras.layers import Dense, Activation, LSTM, Dropout, RepeatVector, TimeDis
 from keras.models import Sequential, Model
 from keras.optimizers import RMSprop
 from keras.callbacks import EarlyStopping, CSVLogger, ModelCheckpoint
+import h5py
 
 import matplotlib.pyplot as plt
 import math
@@ -28,12 +29,12 @@ import matplotlib.animation as animation
 #Use these config only in main
 BATCH_SIZE = 256
 PRED_BATCH_SIZE = 1
-TIMESTEP_IN = 1
+TIMESTEP_IN = 10
 TIMESTEP_OUT = 10
 INPUT_DIM = 1
-NB_EPOCH = 1000
+NB_EPOCH = 1500
 N_NEURONS = 10
-TEST_SHIFT = 0
+TEST_SHIFT = 5
 LOAD_WEIGHT = True
 
 def main():
@@ -55,15 +56,16 @@ def main():
 
 	dataset = []
 	t = np.linspace(0.0, np.pi*2.0, 100)
-	# Test1
+	# TEST1
 	# x1 = 0.8*np.cos(t+TEST_SHIFT) + np.random.normal(-0.03, 0.03, np.shape(t) ) + 0.05
 	# x2 = 0.8*np.sin(t+TEST_SHIFT) + np.random.normal(-0.03, 0.03, np.shape(t) ) + 0.05
-	# Test2
-	x1 = 0.75*np.cos(0.7*t) + np.random.normal(-0.03, 0.03, np.shape(t) )
-	x2 = 0.75*np.sin(0.7*t) + np.random.normal(-0.03, 0.03, np.shape(t) )
-	x1 = np.concatenate(([0.75,0.75,0.75,0.75,0.75,0.75,0.75,0.75,0.75,0.75,0.75,0.75,0.75,0.75,0.75,0.75,0.75,0.75], x1))
-	x2 = np.concatenate(([0.75,0.75,0.75,0.75,0.75,0.75,0.75,0.75,0.75,0.75,0.75,0.75,0.75,0.75,0.75,0.75,0.75,0.75], x2))
-	# Test3
+	# TEST2
+	x1 = 0.8*np.cos(2*t) + np.random.normal(-0.03, 0.03, np.shape(t) ) + 0.05
+	x2 = 0.8*np.sin(2*t) + np.random.normal(-0.03, 0.03, np.shape(t) ) + 0.05
+	x_pad = [0.8,0.8,0.8,0.8,0.8,0.8,0.8,0.8,0.8,0.8,0.8,0.8,0.8,0.8,0.8,0.8,0.8,0.8,0.8,0.8,0.8,0.8]
+	x1 = np.concatenate((x_pad, x1))
+	x2 = np.concatenate((x_pad, x2))
+	# TEST3
 	# x1 = 0.8*np.cos(t)
 	# x2 = 0.8*np.sin(t)
 	dataset.append(x1)
@@ -83,30 +85,36 @@ def main():
 	print X.shape, y.shape
 	X, vmax, vmin = normalize(X) #valid max min
 	rst = []
-	# x_tmp = X[0]
+	# x_tmp = X[0] #uncomment for prediction based
 	for i in range(0, X.shape[0]):
-		p_tmp = new_model.predict(X[i], batch_size=PRED_BATCH_SIZE)
+		p_tmp = new_model.predict_on_batch(X[i])#(X[i], batch_size=PRED_BATCH_SIZE)
 		rst.append(p_tmp)
+		print 'X'
+		print X[i]
+		print 'p_tmp'
+		print p_tmp 
+		#Prediction Based
+		# p_tmp = new_model.predict(x_tmp, batch_size=1)
+		# rst.append(p_tmp)
 		# p_tmp = p_tmp.reshape(p_tmp.shape[0], p_tmp.shape[1], 1)
-		# x_tmp = p_tmp
 		# x_tmp = np.concatenate((x_tmp[:,1:x_tmp.shape[1],:], p_tmp[:,0:1,:]), axis=1)
 		# print 'x_tmp'
 		# print x_tmp
 		# print 'p_tmp'
-		# print p_tmp
+		# print p_tmp 
 	rst = np.array(rst)
 	print rst.shape
 	rst = scale_back(rst, vmin, vmax)
 	X = scale_back(X, vmin, vmax)
 
-	pyplot.plot(X[:,0,:,0]) #Original Plot for OneToMany
-	for i in range(0, rst.shape[0]):
-		# xaxis = [x for x in range(i, i+TIMESTEP_IN)]
-		# pyplot.plot(xaxis, X[i,0,:,0], color='blue')
-		# pyplot.plot(xaxis, X[i,0,:], color='blue') #2D Dense Plot
+	# pyplot.plot(X[:,0,:,0]) #Original plot for OneToMany
+	for i in range(0, rst.shape[0],5):
+		xaxis = [x for x in range(i, i+TIMESTEP_OUT)]
+		pyplot.plot(xaxis, X[i,0,:,0], color='blue')
+		# pyplot.plot(xaxis, X[i,0,:], color='blue')
 		xaxis2 = [x for x in range(i+TIMESTEP_IN, i+TIMESTEP_IN+TIMESTEP_OUT)]
 		pyplot.plot( xaxis2 ,rst[i,0,:], color='red')
-		# pyplot.plot(xaxis2 ,rst[i,0,:], color='red') #2D Dense Plot
+		# pyplot.plot(xaxis2 ,rst[i,0,:], color='red')
 	pyplot.show()
 
 def define_network(batch_size, timesteps, input_dim, n_neurons, load_weight=False):
@@ -115,12 +123,13 @@ def define_network(batch_size, timesteps, input_dim, n_neurons, load_weight=Fals
 	# model.add(Dense(10, input_shape=(timesteps,), activation='sigmoid'))
 	# model.add(Activation('sigmoid')) #range [0,1], tanh=[-1,1]
 	if load_weight:
-		# new_model.load_weights('./models/stateful.h5')
-		# new_model.load_weights('./models/stateful1-scaleFix.h5')
-		# new_model.load_weights('./models/stateful1-1.h5') #reproduce can't beleive time start shift works better-confirmed
-		# new_model.load_weights('./models/stateful2.h5')
+		# model.load_weights('./models/stateful.h5')
+		# model.load_weights('./models/stateful1-scaleFix.h5')
+		# model.load_weights('./models/stateful1-1.h5') #reproduce can't beleive time start shift works better-confirmed
+		# model.load_weights('./models/stateful2.h5')
 		# model.load_weights('./models/stateful2-scaleFix.h5')
-		model.load_weights('./models/stateful-OneToMany.h5')
+		# model.load_weights('./models/stateful-OneToMany.h5')
+		model.load_weights('./models/non-stateful.h5')
 	model.compile(loss='mean_squared_error', optimizer='adam')
 	return model
 
@@ -138,13 +147,14 @@ def fit_lstm(model):
 		print 'verbose training iteration' + str(i)
 		for j in range(X.shape[0]):
 			model.train_on_batch(X[j], y[j])
-		model.reset_states() #reset for every epoch
-	# model.save_weights('./models/stateful.h5')
+			model.reset_states() #reset for every epoch
+	model.save_weights('./models/stateful.h5')
 	# model.save_weights('./models/stateful1-scaleFix.h5')
 	# model.save_weights('./models/stateful1-1.h5')
 	# model.save_weights('./models/stateful2.h5') #adds shifted starting point in training
 	# model.save_weights('./models/stateful2-scaleFix.h5') #adds shifted starting point in training
-	model.save_weights('./models/stateful-OneToMany.h5') #adds shifted starting point in training
+	# model.save_weights('./models/stateful-OneToMany.h5')
+	# model.save_weights('./models/non-stateful.h5')
 	return model
 
 def scale_back(seq, min_y, max_y):
@@ -181,14 +191,14 @@ def generate_sincos():
 	X, X1, X2 = [], [], []
 	for i in xrange(batch_size):
 	    if i<n:
-	        x1 = 0.9*np.cos(t+10) + np.random.normal(-0.04, 0.04, np.shape(t) ) #random.normal(mu, sig, )
-	        x2 = 0.9*np.sin(t+10) + np.random.normal(-0.04, 0.04, np.shape(t) )
+	        x1 = 0.9*np.cos(0.95*t) + np.random.normal(-0.04, 0.04, np.shape(t) ) #random.normal(mu, sig, )
+	        x2 = 0.9*np.sin(0.95*t) + np.random.normal(-0.04, 0.04, np.shape(t) )
 	    elif i<2*n:
 	        x1 = 0.9*np.cos(t) + np.random.normal(-0.015, 0.015, np.shape(t) )
 	        x2 = 0.9*np.sin(t) + np.random.normal(-0.015, 0.015, np.shape(t) )        
 	    elif i<3*n:
-	        x1 = 0.85*np.cos(t+5) + np.random.normal(-0.025, 0.025, np.shape(t) )
-	        x2 = 0.85*np.sin(t+5) + np.random.normal(-0.025, 0.025, np.shape(t) )        
+	        x1 = 0.85*np.cos(t) + np.random.normal(-0.025, 0.025, np.shape(t) )
+	        x2 = 0.85*np.sin(t) + np.random.normal(-0.025, 0.025, np.shape(t) )        
 	    elif i<4*n:
 	        x1 = 0.9*np.cos(1.1*t) + np.random.normal(-0.05, 0.05, np.shape(t) ) - 0.03
 	        x2 = 0.9*np.sin(1.1*t) + np.random.normal(-0.05, 0.05, np.shape(t) ) - 0.03       
@@ -199,8 +209,8 @@ def generate_sincos():
 	        x1 = 0.75*np.cos(t) - 0.01
 	        x2 = 0.75*np.sin(t) - 0.01     
 	    elif i<7*n:
-	        x1 = 0.7*np.cos(t+7) + np.random.normal(-0.02, 0.02, np.shape(t) ) - 0.02
-	        x2 = 0.7*np.sin(t+7) + np.random.normal(-0.02, 0.02, np.shape(t) ) - 0.02       
+	        x1 = 0.7*np.cos(t) + np.random.normal(-0.02, 0.02, np.shape(t) ) - 0.02
+	        x2 = 0.7*np.sin(t) + np.random.normal(-0.02, 0.02, np.shape(t) ) - 0.02       
 	    elif i<8*n:
 	        x1 = 0.73*np.cos(0.9*t) + np.random.normal(-0.01, 0.01, np.shape(t) )
 	        x2 = 0.73*np.sin(0.9*t) + np.random.normal(-0.01, 0.01, np.shape(t) )        
@@ -217,17 +227,17 @@ def generate_sincos():
 	        x1 = 0.9*np.cos(t) + 0.01
 	        x2 = 0.9*np.sin(t) + 0.01
 	    elif i<13*n:
-	    	x1 = 0.85*np.cos(t+15) + np.random.normal(-0.02, 0.02, np.shape(t) )
-	    	x2 = 0.85*np.sin(t+15) + np.random.normal(-0.02, 0.02, np.shape(t) )
+	    	x1 = 0.85*np.cos(t) + np.random.normal(-0.02, 0.02, np.shape(t) )
+	    	x2 = 0.85*np.sin(t) + np.random.normal(-0.02, 0.02, np.shape(t) )
 	    elif i<14*n:
 			x1 = 0.81*np.cos(0.9*t) + np.random.normal(-0.012, 0.012, np.shape(t) ) + 0.005
 			x2 = 0.81*np.sin(0.9*t) + np.random.normal(-0.012, 0.012, np.shape(t) ) + 0.005		
 	    elif i<15*n:
-			x1 = 0.78*np.cos(t-5) + np.random.normal(-0.023, 0.023, np.shape(t) ) - 0.005
-			x2 = 0.78*np.sin(t-5) + np.random.normal(-0.023, 0.023, np.shape(t) ) - 0.005
+			x1 = 0.78*np.cos(t) + np.random.normal(-0.023, 0.023, np.shape(t) ) - 0.005
+			x2 = 0.78*np.sin(t) + np.random.normal(-0.023, 0.023, np.shape(t) ) - 0.005
 	    elif i<16*n:
-			x1 = 0.74*np.cos(t-10) + np.random.normal(-0.018, 0.018, np.shape(t) )
-			x2 = 0.74*np.sin(t-10) + np.random.normal(-0.018, 0.018, np.shape(t) )        
+			x1 = 0.74*np.cos(0.85*t) + np.random.normal(-0.018, 0.018, np.shape(t) )
+			x2 = 0.74*np.sin(0.85*t) + np.random.normal(-0.018, 0.018, np.shape(t) )        
 	    X1.append(x1)
 	    X2.append(x2)
 	X1 = np.array(X1)
