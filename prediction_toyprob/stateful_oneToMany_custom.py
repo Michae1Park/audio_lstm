@@ -10,6 +10,7 @@ from keras.layers import Dense, Activation, LSTM, Dropout, RepeatVector, TimeDis
 from keras.models import Sequential, Model
 from keras.optimizers import RMSprop
 from keras.optimizers import Adam
+from keras import optimizers
 from keras.callbacks import EarlyStopping, CSVLogger, ModelCheckpoint
 from keras import backend as K
 import math
@@ -20,7 +21,7 @@ from sklearn.model_selection import train_test_split
 import gc
 
 #Use these config only in main
-BATCH_SIZE = 256
+BATCH_SIZE = 1
 PRED_BATCH_SIZE = 1
 TIMESTEP_IN = 1
 TIMESTEP_OUT = 10
@@ -40,9 +41,15 @@ def data_generator():
 
 def format_data(dataset): #dataset.shape=(batchsize=256, datapoints=100, dim=2)
 	X, y = [], []
-	for i in range(dataset.shape[1] - TIMESTEP_IN - TIMESTEP_OUT):
-		X.append(dataset[:, i:i+TIMESTEP_IN, :])
-		y.append(dataset[:, i+TIMESTEP_IN:i+TIMESTEP_IN+TIMESTEP_OUT, :])
+	for i in range(dataset.shape[1] - TIMESTEP_IN - TIMESTEP_OUT + 1):
+		x_f = dataset[:, i:i+TIMESTEP_IN, :]
+		y_f = dataset[:, i+TIMESTEP_IN:i+TIMESTEP_IN+TIMESTEP_OUT, :]
+		X.append(x_f)
+		y.append(y_f)
+		print 'x'
+		print x_f[0]
+		print 'y'
+		print y_f[0]
 	X = np.array(X)
 	y = np.array(y)
 	print 'windowed data'
@@ -51,59 +58,61 @@ def format_data(dataset): #dataset.shape=(batchsize=256, datapoints=100, dim=2)
 
 def generate_sincos():
 	t = np.linspace(0.0, np.pi*2.0, 100)
-	batch_size = 256 #32,64,128,256,512,1024,2048
+	batch_size = BATCH_SIZE #32,64,128,256,512,1024,2048
 	n = batch_size/16 
 	X, X1, X2 = [], [], []
 	for j in range(NUM_BATCH): 
 		for i in xrange(batch_size):
-			if i<n:
-				x1 = 0.8*np.cos(t) + np.random.normal(-0.04, 0.04, np.shape(t) ) #random.normal(mu, sig, )
-				x2 = 0.8*np.sin(t) + np.random.normal(-0.04, 0.04, np.shape(t) )
-			elif i<2*n:
-				x1 = 0.8*np.cos(t) + np.random.normal(-0.015, 0.015, np.shape(t) )
-				x2 = 0.8*np.sin(t) + np.random.normal(-0.015, 0.015, np.shape(t) )        
-			elif i<3*n:
-				x1 = 0.8*np.cos(t) + np.random.normal(-0.025, 0.025, np.shape(t) )
-				x2 = 0.8*np.sin(t) + np.random.normal(-0.025, 0.025, np.shape(t) )        
-			elif i<4*n:
-				x1 = 0.8*np.cos(t) + np.random.normal(-0.05, 0.05, np.shape(t) ) #- 0.03
-				x2 = 0.8*np.sin(t) + np.random.normal(-0.05, 0.05, np.shape(t) ) #- 0.03       
-			elif i<5*n:
-				x1 = 0.8*np.cos(t) + np.random.normal(-0.03, 0.03, np.shape(t) ) #+ 0.03
-				x2 = 0.8*np.sin(t) + np.random.normal(-0.03, 0.03, np.shape(t) ) #+ 0.03        
-			elif i<6*n:
-				x1 = 0.8*np.cos(t) #- 0.01
-				x2 = 0.8*np.sin(t) #- 0.01     
-			elif i<7*n:
-				x1 = 0.8*np.cos(t) + np.random.normal(-0.02, 0.02, np.shape(t) ) #- 0.02
-				x2 = 0.8*np.sin(t) + np.random.normal(-0.02, 0.02, np.shape(t) ) #- 0.02       
-			elif i<8*n:
-				x1 = 0.8*np.cos(t) + np.random.normal(-0.01, 0.01, np.shape(t) )
-				x2 = 0.8*np.sin(t) + np.random.normal(-0.01, 0.01, np.shape(t) )        
-			elif i<9*n:
-				x1 = 0.8*np.cos(t) + np.random.normal(-0.035, 0.035, np.shape(t) )
-				x2 = 0.8*np.sin(t) + np.random.normal(-0.035, 0.035, np.shape(t) )        
-			elif i<10*n:
-				x1 = 0.8*np.cos(t) 
-				x2 = 0.8*np.sin(t)         
-			elif i<11*n:
-				x1 = 0.8*np.cos(t) #+ 0.01
-				x2 = 0.8*np.sin(t) #+ 0.01    
-			elif i<12*n:
-				x1 = 0.8*np.cos(t) #+ 0.01
-				x2 = 0.8*np.sin(t) #+ 0.01
-			elif i<13*n:
-				x1 = 0.8*np.cos(t) + np.random.normal(-0.02, 0.02, np.shape(t) )
-				x2 = 0.8*np.sin(t) + np.random.normal(-0.02, 0.02, np.shape(t) )
-			elif i<14*n:
-				x1 = 0.8*np.cos(t) + np.random.normal(-0.012, 0.012, np.shape(t) ) #+ 0.05
-				x2 = 0.8*np.sin(t) + np.random.normal(-0.012, 0.012, np.shape(t) ) #+ 0.05      
-			elif i<15*n:
-				x1 = 0.8*np.cos(t) + np.random.normal(-0.023, 0.023, np.shape(t) ) #- 0.05
-				x2 = 0.8*np.sin(t) + np.random.normal(-0.023, 0.023, np.shape(t) ) #- 0.05
-			elif i<16*n:
-				x1 = 0.8*np.cos(t) + np.random.normal(-0.018, 0.018, np.shape(t) )
-				x2 = 0.8*np.sin(t) + np.random.normal(-0.018, 0.018, np.shape(t) )        
+			x1 = 0.8*np.cos(t) 
+			x2 = 0.8*np.sin(t) 
+			# if i<n:
+			# 	x1 = 0.8*np.cos(t) #+ np.random.normal(-0.04, 0.04, np.shape(t) ) #random.normal(mu, sig, )
+			# 	x2 = 0.8*np.sin(t) #+ np.random.normal(-0.04, 0.04, np.shape(t) )
+			# elif i<2*n:
+			# 	x1 = 0.8*np.cos(t) #+ np.random.normal(-0.015, 0.015, np.shape(t) )
+			# 	x2 = 0.8*np.sin(t) #+ np.random.normal(-0.015, 0.015, np.shape(t) )        
+			# elif i<3*n:
+			# 	x1 = 0.8*np.cos(t) #+ np.random.normal(-0.025, 0.025, np.shape(t) )
+			# 	x2 = 0.8*np.sin(t) #+ np.random.normal(-0.025, 0.025, np.shape(t) )        
+			# elif i<4*n:
+			# 	x1 = 0.8*np.cos(t) #+ np.random.normal(-0.05, 0.05, np.shape(t) ) #- 0.03
+			# 	x2 = 0.8*np.sin(t) #+ np.random.normal(-0.05, 0.05, np.shape(t) ) #- 0.03       
+			# elif i<5*n:
+			# 	x1 = 0.8*np.cos(t) #+ np.random.normal(-0.03, 0.03, np.shape(t) ) #+ 0.03
+			# 	x2 = 0.8*np.sin(t) #+ np.random.normal(-0.03, 0.03, np.shape(t) ) #+ 0.03        
+			# elif i<6*n:
+			# 	x1 = 0.8*np.cos(t) #- 0.01
+			# 	x2 = 0.8*np.sin(t) #- 0.01     
+			# elif i<7*n:
+			# 	x1 = 0.8*np.cos(t) #+ np.random.normal(-0.02, 0.02, np.shape(t) ) #- 0.02
+			# 	x2 = 0.8*np.sin(t) #+ np.random.normal(-0.02, 0.02, np.shape(t) ) #- 0.02       
+			# elif i<8*n:
+			# 	x1 = 0.8*np.cos(t) #+ np.random.normal(-0.01, 0.01, np.shape(t) )
+			# 	x2 = 0.8*np.sin(t) #+ np.random.normal(-0.01, 0.01, np.shape(t) )        
+			# elif i<9*n:
+			# 	x1 = 0.8*np.cos(t) #+ np.random.normal(-0.035, 0.035, np.shape(t) )
+			# 	x2 = 0.8*np.sin(t) #+ np.random.normal(-0.035, 0.035, np.shape(t) )        
+			# elif i<10*n:
+			# 	x1 = 0.8*np.cos(t) 
+			# 	x2 = 0.8*np.sin(t)         
+			# elif i<11*n:
+			# 	x1 = 0.8*np.cos(t) #+ 0.01
+			# 	x2 = 0.8*np.sin(t) #+ 0.01    
+			# elif i<12*n:
+			# 	x1 = 0.8*np.cos(t) #+ 0.01
+			# 	x2 = 0.8*np.sin(t) #+ 0.01
+			# elif i<13*n:
+			# 	x1 = 0.8*np.cos(t) #+ np.random.normal(-0.02, 0.02, np.shape(t) )
+			# 	x2 = 0.8*np.sin(t) #+ np.random.normal(-0.02, 0.02, np.shape(t) )
+			# elif i<14*n:
+			# 	x1 = 0.8*np.cos(t) #+ np.random.normal(-0.012, 0.012, np.shape(t) ) #+ 0.05
+			# 	x2 = 0.8*np.sin(t) #+ np.random.normal(-0.012, 0.012, np.shape(t) ) #+ 0.05      
+			# elif i<15*n:
+			# 	x1 = 0.8*np.cos(t) #+ np.random.normal(-0.023, 0.023, np.shape(t) ) #- 0.05
+			# 	x2 = 0.8*np.sin(t) #+ np.random.normal(-0.023, 0.023, np.shape(t) ) #- 0.05
+			# elif i<16*n:
+			# 	x1 = 0.8*np.cos(t) #+ np.random.normal(-0.018, 0.018, np.shape(t) )
+			# 	x2 = 0.8*np.sin(t) #+ np.random.normal(-0.018, 0.018, np.shape(t) )        
 			X1.append(x1)
 			X2.append(x2)
 	X1 = np.array(X1)
@@ -137,8 +146,9 @@ def define_network(batch_size, timesteps, input_dim, n_neurons, load_weight=Fals
 					stateful=True, activation='tanh'))
 	if load_weight:
 		model.load_weights(WEIGHT_FILE)
-	# optimizer = RMSprop(lr=lr, rho=0.9, epsilon=1e-08, decay=0.0001, clipvalue=10)
-	optimizer = Adam(lr=0.005)#lr=0.001, beta_1=0.9, beta_2=0.999, epsilon=1e-08, decay=0.0)
+	#optimizer = RMSprop(lr=0.001)#, rho=0.9, epsilon=1e-08, decay=0.0001, clipvalue=10)
+	# optimizer = Adam(lr=0.005)#lr=0.001, beta_1=0.9, beta_2=0.999, epsilon=1e-08, decay=0.0)
+	optimizer = optimizers.Adam(lr=0.001)
 	loss = 'mean_squared_error'
 	model.compile(loss=loss, optimizer=optimizer)
 	print model.summary()
@@ -148,7 +158,7 @@ def fit_lstm(model, x_train, x_test, y_train, y_test):
 	wait         = 0
 	plateau_wait = 0
 	min_loss = 1e+15
-	patience = 10
+	patience = 5
 	plot_tr_loss = []
 	plot_te_loss = []
 	for epoch in range(NB_EPOCH):
@@ -194,7 +204,7 @@ def fit_lstm(model, x_train, x_test, y_train, y_test):
 			min_loss = val_loss
 			wait         = 0
 			plateau_wait = 0
-
+			print 'saving model'
 			model.save_weights(WEIGHT_FILE) 
 		else:
 			if wait > patience:
@@ -263,11 +273,11 @@ def predict(new_model):
 	print rst.shape
 
 	#PLOT
-	pyplot.plot(X[:,0,:,0]) #Original Plot for OneToMany
+	# pyplot.plot(X[:,0,:,0]) #Original Plot for OneToMany
 	# pyplot.plot(X[:,:]) #Dense Plot
 	for i in range(0, rst.shape[0]):
-		# xaxis = [x for x in range(i, i+TIMESTEP_IN)]
-		# pyplot.plot(xaxis, X[i,0,:,0], color='blue')
+		xaxis = [x for x in range(i, i+TIMESTEP_IN)]
+		pyplot.plot(xaxis, X[i,0,:,0], color='blue')
 		# pyplot.plot(xaxis, X[i,0,:], color='blue') #2D Dense Plot
 		xaxis2 = [x for x in range(i+TIMESTEP_IN, i+TIMESTEP_IN+TIMESTEP_OUT)]
 		pyplot.plot(xaxis2 ,rst[i,0,:], color='red')
