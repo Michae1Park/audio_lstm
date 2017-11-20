@@ -20,6 +20,10 @@ import matplotlib.animation as animation
 from sklearn.model_selection import train_test_split
 import gc
 
+# Added Technique
+# noise added for X, no noise for y
+#
+
 #Use these config only in main
 BATCH_SIZE = 32
 PRED_BATCH_SIZE = 1
@@ -30,7 +34,7 @@ NB_EPOCH = 500
 N_NEURONS = TIMESTEP_OUT
 TEST_SHIFT = 0
 LOAD_WEIGHT = True
-WEIGHT_FILE = './models/stateful-OneToMany-tanh2.h5'
+WEIGHT_FILE = './models/stateful-twoToMany-tanh-denoise.h5'
 PLOT = True
 NUM_BATCH = 100 #Total #samples = Num_batch x Batch_size
 
@@ -52,6 +56,54 @@ def format_data(dataset): #dataset.shape=(batchsize=256, datapoints=100, dim=2)
 	print X.shape, y.shape
 	return X, y
 
+def add_noise(X):
+	print 'add_noise to X'
+	print X.shape
+	batch_size = BATCH_SIZE #32,64,128,256,512,1024,2048
+	n = batch_size/16 
+	X, X1, X2 = [], [], []
+	for j in range(NUM_BATCH): 
+		for i in xrange(batch_size):
+			# x1 = 0.8*np.cos(t) 
+			# x2 = 0.8*np.sin(t)
+			if i<n:
+				X[i,:,:,0] = X[i,:,:,0] + np.random.normal(-0.04, 0.04, (89,2) ) #random.normal(mu, sig, )
+			elif i<2*n:
+				X[i] = X[i] + np.random.normal(-0.015, 0.015, np.shape(t) )
+			elif i<3*n:
+				X[i] = X[i] + np.random.normal(-0.025, 0.025, np.shape(t) )
+			elif i<4*n:
+				X[i] = X[i] + np.random.normal(-0.05, 0.05, np.shape(t) ) - 0.03
+			elif i<5*n:
+				X[i] = X[i] + np.random.normal(-0.03, 0.03, np.shape(t) ) + 0.03
+			elif i<6*n:
+				X[i] = X[i] - 0.01
+			elif i<7*n:
+				X[i] = X[i] + np.random.normal(-0.02, 0.02, np.shape(t) ) - 0.02
+			elif i<8*n:
+				X[i] = X[i] + np.random.normal(-0.01, 0.01, np.shape(t) )
+			elif i<9*n:
+				X[i] = X[i] + np.random.normal(-0.035, 0.035, np.shape(t) )
+			elif i<10*n:
+				X[i] = X[i]
+			elif i<11*n:
+				X[i] = X[i] + 0.01
+			elif i<12*n:
+				X[i] = X[i] + 0.01
+			elif i<13*n:
+				X[i] = X[i] + np.random.normal(-0.02, 0.02, np.shape(t) )
+			elif i<14*n:
+				X[i] = X[i] + np.random.normal(-0.012, 0.012, np.shape(t) ) + 0.05
+			elif i<15*n:
+				X[i] = X[i] + np.random.normal(-0.023, 0.023, np.shape(t) ) - 0.05
+			elif i<16*n:
+				X[i] = X[i] + np.random.normal(-0.018, 0.018, np.shape(t) )
+
+	for i in range(batch_size):
+	  pyplot.plot(X[i,:,0])
+	pyplot.show()
+	return X
+
 def generate_sincos():
 	t = np.linspace(0.0, np.pi*2.0, 100)
 	batch_size = BATCH_SIZE #32,64,128,256,512,1024,2048
@@ -62,31 +114,31 @@ def generate_sincos():
 			# x1 = 0.8*np.cos(t) 
 			# x2 = 0.8*np.sin(t)
 			if i<n:
-				x1 = 0.8*np.cos(t) + np.random.normal(-0.04, 0.04, np.shape(t) ) #random.normal(mu, sig, )
+				x1 = 0.8*np.cos(t) #random.normal(mu, sig, )
 				x2 = 0.8*np.sin(t) + np.random.normal(-0.04, 0.04, np.shape(t) )
 			elif i<2*n:
-				x1 = 0.7*np.cos(t) + np.random.normal(-0.015, 0.015, np.shape(t) )
+				x1 = 0.7*np.cos(t) 
 				x2 = 0.7*np.sin(t) + np.random.normal(-0.015, 0.015, np.shape(t) )        
 			elif i<3*n:
-				x1 = 0.8*np.cos(t) + np.random.normal(-0.025, 0.025, np.shape(t) )
+				x1 = 0.8*np.cos(t)
 				x2 = 0.8*np.sin(t) + np.random.normal(-0.025, 0.025, np.shape(t) )        
 			elif i<4*n:
-				x1 = 0.75*np.cos(t) + np.random.normal(-0.05, 0.05, np.shape(t) ) - 0.03
+				x1 = 0.75*np.cos(t) - 0.03
 				x2 = 0.75*np.sin(t) + np.random.normal(-0.05, 0.05, np.shape(t) ) - 0.03       
 			elif i<5*n:
-				x1 = 0.8*np.cos(t) + np.random.normal(-0.03, 0.03, np.shape(t) ) + 0.03
+				x1 = 0.8*np.cos(t) + 0.03
 				x2 = 0.8*np.sin(t) + np.random.normal(-0.03, 0.03, np.shape(t) ) + 0.03        
 			elif i<6*n:
 				x1 = 0.78*np.cos(t) - 0.01
 				x2 = 0.78*np.sin(t) - 0.01     
 			elif i<7*n:
-				x1 = 0.83*np.cos(t) + np.random.normal(-0.02, 0.02, np.shape(t) ) - 0.02
+				x1 = 0.83*np.cos(t) - 0.02
 				x2 = 0.83*np.sin(t) + np.random.normal(-0.02, 0.02, np.shape(t) ) - 0.02       
 			elif i<8*n:
-				x1 = 0.8*np.cos(t) + np.random.normal(-0.01, 0.01, np.shape(t) )
+				x1 = 0.8*np.cos(t) 
 				x2 = 0.8*np.sin(t) + np.random.normal(-0.01, 0.01, np.shape(t) )        
 			elif i<9*n:
-				x1 = 0.83*np.cos(t) + np.random.normal(-0.035, 0.035, np.shape(t) )
+				x1 = 0.83*np.cos(t) 
 				x2 = 0.83*np.sin(t) + np.random.normal(-0.035, 0.035, np.shape(t) )        
 			elif i<10*n:
 				x1 = 0.8*np.cos(t) 
@@ -98,16 +150,16 @@ def generate_sincos():
 				x1 = 0.85*np.cos(t) + 0.01
 				x2 = 0.85*np.sin(t) + 0.01
 			elif i<13*n:
-				x1 = 0.8*np.cos(t) + np.random.normal(-0.02, 0.02, np.shape(t) )
+				x1 = 0.8*np.cos(t) 
 				x2 = 0.8*np.sin(t) + np.random.normal(-0.02, 0.02, np.shape(t) )
 			elif i<14*n:
-				x1 = 0.8*np.cos(t) + np.random.normal(-0.012, 0.012, np.shape(t) ) + 0.05
+				x1 = 0.8*np.cos(t) + 0.05
 				x2 = 0.8*np.sin(t) + np.random.normal(-0.012, 0.012, np.shape(t) ) + 0.05      
 			elif i<15*n:
-				x1 = 0.72*np.cos(t) + np.random.normal(-0.023, 0.023, np.shape(t) ) - 0.05
+				x1 = 0.72*np.cos(t) - 0.05
 				x2 = 0.72*np.sin(t) + np.random.normal(-0.023, 0.023, np.shape(t) ) - 0.05
 			elif i<16*n:
-				x1 = 0.8*np.cos(t) + np.random.normal(-0.018, 0.018, np.shape(t) )
+				x1 = 0.8*np.cos(t) 
 				x2 = 0.8*np.sin(t) + np.random.normal(-0.018, 0.018, np.shape(t) )        
 			X1.append(x1)
 			X2.append(x2)
@@ -291,13 +343,21 @@ def main():
 	y = np.swapaxes(y, 0, 1)
 	print 'in main'
 	print X.shape, y.shape
+
+	# for i in range(X.shape[0]):
+	#   pyplot.plot(X[i,:,:,0])
+ #  	  # pyplot.plot(y[i,:,:])
+	# pyplot.show()
+	X = add_noise(X)
+
 	X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42)
 	print X_train.shape, X_test.shape, y_train.shape, y_test.shape
+
 
 	# np.random.seed(3334)
 	#train phase
 	lstm_model = define_network(BATCH_SIZE, TIMESTEP_IN, INPUT_DIM, N_NEURONS, False)
-	# lstm_model = fit_lstm(lstm_model, X_train, X_test, y_train, y_test)
+	lstm_model = fit_lstm(lstm_model, X_train, X_test, y_train, y_test)
 	#predict phase
 	new_model = define_network(PRED_BATCH_SIZE, TIMESTEP_IN, INPUT_DIM, N_NEURONS, LOAD_WEIGHT)
 	predict(new_model)
