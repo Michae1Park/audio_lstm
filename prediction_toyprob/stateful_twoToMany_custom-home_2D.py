@@ -27,14 +27,14 @@ import gc
 #Use these config only in main
 BATCH_SIZE = 32
 PRED_BATCH_SIZE = 1
-TIMESTEP_IN = 2
+TIMESTEP_IN = 10
 TIMESTEP_OUT = 10
-INPUT_DIM = 1
+INPUT_DIM = 2
 NB_EPOCH = 500
-N_NEURONS = TIMESTEP_OUT
+N_NEURONS = INPUT_DIM
 TEST_SHIFT = 0
 LOAD_WEIGHT = True
-WEIGHT_FILE = './models/stateful-twoToMany-tanh-denoise.h5'
+WEIGHT_FILE = './models/stateful-twoToMany-tanh-denoise-2D.h5'
 PLOT = True
 NUM_BATCH = 100 #Total #samples = Num_batch x Batch_size
 
@@ -69,6 +69,10 @@ def add_noise(X):
 	# 	for i in range(batch_size):
 	# 	  pyplot.plot(X[i,:,:,0])
 	# pyplot.show()
+	# for j in range(NUM_BATCH): 
+	# 	for i in range(batch_size):
+	# 	  pyplot.plot(X[i,:,:,1])
+	# pyplot.show()
 	return X
 
 def generate_sincos():
@@ -82,31 +86,31 @@ def generate_sincos():
 			# x2 = 0.8*np.sin(t)
 			if i<n:
 				x1 = 0.8*np.cos(t) 
-				x2 = 0.9*np.sin(8*t)
+				x2 = 0.8*np.sin(8*t)
 				x2 = x2[0:7]
 				pad = np.zeros(46,dtype=float32)
 				x2 = np.concatenate((pad, x2))
 				pad = np.zeros(47,dtype=float32)
 				x2 = np.concatenate((x2, pad))
 			elif i<2*n:
-				x1 = 0.7*np.cos(t) 
-				x2 = 0.9*np.sin(10*t)  )       
+				x1 = 0.81*np.cos(t) + 0.005
+				x2 = 0.81*np.sin(10*t)      
 				x2 = x2[0:4]
 				pad = np.zeros(50,dtype=float32)
 				x2 = np.concatenate((pad, x2))
 				pad = np.zeros(46,dtype=float32)
 				x2 = np.concatenate((x2, pad))        
 			elif i<3*n:
-				x1 = 0.8*np.cos(t) 
-				x2 = 0.9*np.sin(10*t)        
+				x1 = 0.81*np.cos(t) + 0.005
+				x2 = 0.81*np.sin(10*t)        
 				x2 = x2[0:5]
 				pad = np.zeros(46,dtype=float32)
 				x2 = np.concatenate((pad, x2))
 				pad = np.zeros(49,dtype=float32)
 				x2 = np.concatenate((x2, pad))
 			elif i<4*n:
-				x1 = 0.75*np.cos(t)
-				x2 = 0.9*np.sin(10*t)      
+				x1 = 0.79*np.cos(t) + 0.005
+				x2 = 0.79*np.sin(10*t)      
 				x2 = x2[0:5]
 				pad = np.zeros(47,dtype=float32)
 				x2 = np.concatenate((pad, x2))
@@ -114,39 +118,39 @@ def generate_sincos():
 				x2 = np.concatenate((x2, pad))  
 			elif i<5*n:
 				x1 = 0.8*np.cos(t) 
-				x2 = 0.9*np.sin(10*t)       
+				x2 = 0.8*np.sin(10*t)       
 				x2 = x2[0:5]
 				pad = np.zeros(48,dtype=float32)
 				x2 = np.concatenate((pad, x2))
 				pad = np.zeros(47,dtype=float32)
 				x2 = np.concatenate((x2, pad))
 			elif i<6*n:
-				x1 = 0.78*np.cos(t) - 0.01
-				x2 = 0.85*np.sin(10*t)       
+				x1 = 0.81*np.cos(t) 
+				x2 = 0.81*np.sin(10*t)       
 				x2 = x2[0:5]
 				pad = np.zeros(49,dtype=float32)
 				x2 = np.concatenate((pad, x2))
 				pad = np.zeros(46,dtype=float32)
 				x2 = np.concatenate((x2, pad))
 			elif i<7*n:
-				x1 = 0.83*np.cos(t)
-				x2 = 0.87*np.sin(10*t)   
+				x1 = 0.8*np.cos(t) + 0.003
+				x2 = 0.8*np.sin(10*t)   
 				x2 = x2[0:5]
 				pad = np.zeros(48,dtype=float32)
 				x2 = np.concatenate((pad, x2))
 				pad = np.zeros(47,dtype=float32)
 				x2 = np.concatenate((x2, pad))
 			elif i<8*n:
-				x1 = 0.8*np.cos(t) 
-				x2 = 0.88*np.sin(10*t)       
+				x1 = 0.8*np.cos(t) + 0.003
+				x2 = 0.8*np.sin(10*t)       
 				x2 = x2[0:5]
 				pad = np.zeros(49,dtype=float32)
 				x2 = np.concatenate((pad, x2))
 				pad = np.zeros(46,dtype=float32)
 				x2 = np.concatenate((x2, pad))
 			elif i<9*n:
-				x1 = 0.83*np.cos(t)
-				x2 = 0.9*np.sin(8*t) 
+				x1 = 0.81*np.cos(t) - 0.005
+				x2 = 0.81*np.sin(8*t) 
 				x2 = x2[0:7]
 				pad = np.zeros(45,dtype=float32)
 				x2 = np.concatenate((pad, x2))
@@ -154,23 +158,23 @@ def generate_sincos():
 				x2 = np.concatenate((x2, pad))
 			elif i<10*n:
 				x1 = 0.8*np.cos(t) 
-				x2 = 0.9*np.sin(8*t) 
+				x2 = 0.8*np.sin(8*t) 
 				x2 = x2[0:7]
 				pad = np.zeros(47,dtype=float32)
 				x2 = np.concatenate((pad, x2))
 				pad = np.zeros(46,dtype=float32)
 				x2 = np.concatenate((x2, pad))
 			elif i<11*n:
-				x1 = 0.8*np.cos(t) + 0.01
-				x2 = 0.9*np.sin(8*t) 
+				x1 = 0.8*np.cos(t) - 0.003
+				x2 = 0.8*np.sin(8*t) 
 				x2 = x2[0:7]
 				pad = np.zeros(48,dtype=float32)
 				x2 = np.concatenate((pad, x2))
 				pad = np.zeros(45,dtype=float32)
 				x2 = np.concatenate((x2, pad))
 			elif i<12*n:
-				x1 = 0.85*np.cos(t) + 0.01
-				x2 = 0.85*np.sin(8*t) 
+				x1 = 0.81*np.cos(t) 
+				x2 = 0.81*np.sin(8*t) 
 				x2 = x2[0:7]
 				pad = np.zeros(45,dtype=float32)
 				x2 = np.concatenate((pad, x2))
@@ -178,23 +182,23 @@ def generate_sincos():
 				x2 = np.concatenate((x2, pad))
 			elif i<13*n:
 				x1 = 0.8*np.cos(t)
-				x2 = 0.85*np.sin(8*t) 
+				x2 = 0.8*np.sin(8*t) 
 				x2 = x2[0:7]
 				pad = np.zeros(47,dtype=float32)
 				x2 = np.concatenate((pad, x2))
 				pad = np.zeros(46,dtype=float32)
 				x2 = np.concatenate((x2, pad))
 			elif i<14*n:
-				x1 = 0.8*np.cos(t) 
-				x2 = 0.85*np.sin(8*t)
+				x1 = 0.8*np.cos(t) - 0.003
+				x2 = 0.8*np.sin(8*t)
 				x2 = x2[0:7]
 				pad = np.zeros(47,dtype=float32)
 				x2 = np.concatenate((pad, x2))
 				pad = np.zeros(46,dtype=float32)
 				x2 = np.concatenate((x2, pad))
 			elif i<15*n:
-				x1 = 0.72*np.cos(t) 
-				x2 = 0.85*np.sin(8*t)
+				x1 = 0.79*np.cos(t) - 0.005
+				x2 = 0.79*np.sin(8*t)
 				x2 = x2[0:7]
 				pad = np.zeros(46,dtype=float32)
 				x2 = np.concatenate((pad, x2))
@@ -202,7 +206,7 @@ def generate_sincos():
 				x2 = np.concatenate((x2, pad))
 			elif i<16*n:
 				x1 = 0.8*np.cos(t) 
-				x2 = 0.85*np.sin(8*t) 
+				x2 = 0.8*np.sin(8*t) 
 				x2 = x2[0:7]
 				pad = np.zeros(48,dtype=float32)
 				x2 = np.concatenate((pad, x2))
@@ -222,11 +226,10 @@ def generate_sincos():
 	X = np.rollaxis(X, 0, 3)
 	print X.shape
 
-	# pyplot.plot(X[15,:,1])
+	# for j in range(NUM_BATCH): 
+	# 	for i in range(batch_size):
+	# 		pyplot.plot(X[i,:,0])
 	# pyplot.show()
-	for i in range(batch_size):
-		pyplot.plot(X[i,:,1])
-	pyplot.show()
 
 	X = X.astype('float32')
 	if INPUT_DIM==1:
@@ -240,7 +243,7 @@ def generate_sincos():
 def define_network(batch_size, timesteps, input_dim, n_neurons, load_weight=False):
 	model = Sequential()
 	model.add(LSTM(n_neurons, batch_input_shape=(batch_size, timesteps, input_dim),
-					stateful=False, activation='tanh'))
+					stateful=True, return_sequences=True, return_state=True, activation='tanh'))
 	if load_weight:
 		model.load_weights(WEIGHT_FILE)
 	#optimizer = RMSprop(lr=0.001)#, rho=0.9, epsilon=1e-08, decay=0.0001, clipvalue=10)
@@ -342,24 +345,37 @@ def predict(new_model):
 	# x1 = 0.8*np.cos(t+TEST_SHIFT) + np.random.normal(-0.033, 0.033, np.shape(t) ) #+ 0.05
 	# x2 = 0.8*np.sin(t+TEST_SHIFT) + np.random.normal(-0.033, 0.033, np.shape(t) ) #+ 0.05
 	# Test2
-	# x1 = 0.82*np.cos(t) + np.random.normal(0.0, 0.005, np.shape(t) )
-	# x2 = 0.82*np.sin(t) + np.random.normal(0.0, 0.005, np.shape(t) )
-	# x1 = np.concatenate(([0.82,0.82,0.82,0.82,0.82,0.82,0.82,0.82,0.82,0.82,0.82,0.82,0.82,0.82,0.82,0.82,0.82,0.82,0.82,0.82,0.82,0.82,0.82,0.82], x1))
-	# x2 = np.concatenate(([0.75,0.75,0.75,0.75,0.75,0.75,0.75,0.75,0.75,0.75,0.75,0.75,0.75,0.75,0.75,0.75,0.75,0.75,0.75,0.75,0.75,0.75,0.75,0.75], x2))
-	# Test3 -- same as training
-	x1 = 0.8*np.cos(t)
-	x2 = 0.8*np.sin(t)
+	x1 = 0.82*np.cos(t)
+	x2 = 0.82*np.sin(8*t) 
+	x2 = x2[0:7]
+	pad = np.zeros(48,dtype=float32)
+	x2 = np.concatenate((pad, x2))
+	pad = np.zeros(45,dtype=float32)
+	x2 = np.concatenate((x2, pad))
+	x1 = np.concatenate(([0.82,0.82,0.82,0.82,0.82,0.82,0.82,0.82,0.82,0.82,0.82,0.82,0.82,0.82,0.82,0.82,0.82,0.82,0.82,0.82,0.82,0.82,0.82,0.82], x1))
+	x2 = np.concatenate(([0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00], x2))	# Test3 -- same as training
+	# x1 = 0.8*np.cos(t)
+	# x2 = 0.8*np.sin(8*t) 
+	# x2 = x2[0:7]
+	# pad = np.zeros(48,dtype=float32)
+	# x2 = np.concatenate((pad, x2))
+	# pad = np.zeros(45,dtype=float32)
+	# x2 = np.concatenate((x2, pad))
+	#--------------------------------------
 	dataset.append(x1)
 	dataset.append(x2)
 	dataset = np.array(dataset)
 	print dataset.shape
-	dataset = dataset[0] #[1,100]
+	# dataset = dataset[0] #[1,100]
+	dataset = np.swapaxes(dataset, 0,1)
+	print dataset.shape
 	X, y = [], []
 	for i in range(dataset.shape[0] - TIMESTEP_IN - TIMESTEP_OUT):
 		X.append(dataset[i:i+TIMESTEP_IN])
 		y.append(dataset[i+TIMESTEP_IN:i+TIMESTEP_IN+TIMESTEP_OUT])
 	X = np.array(X)
 	y = np.array(y)
+	print X.shape, y.shape
 	X = X.reshape(X.shape[0], PRED_BATCH_SIZE, TIMESTEP_IN, INPUT_DIM)
 	rst = []
 	# x_tmp = X[0]
@@ -367,7 +383,7 @@ def predict(new_model):
 		p_tmp = new_model.predict_on_batch(X[i]) #, batch_size=PRED_BATCH_SIZE)
 		rst.append(p_tmp)
 	rst = np.array(rst)
-	print rst.shape
+	print X.shape, rst.shape
 
 	#PLOT
 	# pyplot.plot(X[:,0,:,0]) #Original Plot for OneToMany
@@ -376,8 +392,16 @@ def predict(new_model):
 		xaxis = [x for x in range(i, i+TIMESTEP_IN)]
 		pyplot.plot(xaxis, X[i,0,:,0], color='blue')
 		# pyplot.plot(xaxis, X[i,0,:], color='blue') #2D Dense Plot
-		xaxis2 = [x for x in range(i+TIMESTEP_IN, i+TIMESTEP_IN+TIMESTEP_OUT)]
-		pyplot.plot(xaxis2 ,rst[i,0,:], color='red')
+		xaxis2 = [w for w in range(i+TIMESTEP_IN, i+TIMESTEP_IN+TIMESTEP_OUT)]
+		pyplot.plot(xaxis2 ,rst[i,0,:,0], color='red')
+		# pyplot.plot(xaxis2 ,rst[i,0,:], color='red') #2D Dense Plot
+	pyplot.show()
+	for i in range(0, rst.shape[0]):
+		xaxis = [x for x in range(i, i+TIMESTEP_IN)]
+		pyplot.plot(xaxis, X[i,0,:,1], color='blue')
+		# pyplot.plot(xaxis, X[i,0,:], color='blue') #2D Dense Plot
+		xaxis2 = [w for w in range(i+TIMESTEP_IN, i+TIMESTEP_IN+TIMESTEP_OUT)]
+		pyplot.plot(xaxis2 ,rst[i,0,:,1], color='red')
 		# pyplot.plot(xaxis2 ,rst[i,0,:], color='red') #2D Dense Plot
 	pyplot.show()
 
@@ -387,9 +411,11 @@ def main():
 	'''
 	X, y = data_generator() #generates entire dataset to be used shape is listed above
 	X = X.reshape(X.shape[0],X.shape[1],X.shape[2],INPUT_DIM)
-	y = y.reshape(y.shape[0],y.shape[1],y.shape[2])#,INPUT_DIM)
+	y = y.reshape(y.shape[0],y.shape[1],y.shape[2],INPUT_DIM)
 	X = np.swapaxes(X, 0, 1)
 	y = np.swapaxes(y, 0, 1)
+	# X = np.swapaxes(X, 2, 3)
+	# y = np.swapaxes(y, 2, 3)
 	print 'in main'
 	print X.shape, y.shape
 
@@ -400,15 +426,17 @@ def main():
 
 	# for i in range(X_test.shape[0]):
 	#   pyplot.plot(X_test[i,:,:,0])
+ #  	  pyplot.plot(X_test[i,:,:,1])
 	# pyplot.show()
 	# for i in range(y_test.shape[0]):
- #  	  pyplot.plot(y_test[i,:,:])
+ #  	  pyplot.plot(y_test[i,:,:,0])
+	#   pyplot.plot(y_test[i,:,:,1])
 	# pyplot.show()
 
 	# np.random.seed(3334)
 	#train phase
 	lstm_model = define_network(BATCH_SIZE, TIMESTEP_IN, INPUT_DIM, N_NEURONS, False)
-	# lstm_model = fit_lstm(lstm_model, X_train, X_test, y_train, y_test)
+	lstm_model = fit_lstm(lstm_model, X_train, X_test, y_train, y_test)
 	#predict phase
 	new_model = define_network(PRED_BATCH_SIZE, TIMESTEP_IN, INPUT_DIM, N_NEURONS, LOAD_WEIGHT)
 	predict(new_model)

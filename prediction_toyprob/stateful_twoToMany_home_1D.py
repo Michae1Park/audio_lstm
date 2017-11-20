@@ -286,7 +286,7 @@ def predict(new_model):
 		p_tmp = new_model.predict_on_batch(X[i]) #, batch_size=PRED_BATCH_SIZE)
 		rst.append(p_tmp)
 	rst = np.array(rst)
-	print rst.shape
+	print X.shape, rst.shape
 
 	#PLOT
 	# pyplot.plot(X[:,0,:,0]) #Original Plot for OneToMany
@@ -327,7 +327,7 @@ def main():
 	# np.random.seed(3334)
 	#train phase
 	lstm_model = define_network(BATCH_SIZE, TIMESTEP_IN, INPUT_DIM, N_NEURONS, False)
-	lstm_model = fit_lstm(lstm_model, X_train, X_test, y_train, y_test)
+	# lstm_model = fit_lstm(lstm_model, X_train, X_test, y_train, y_test)
 	#predict phase
 	new_model = define_network(PRED_BATCH_SIZE, TIMESTEP_IN, INPUT_DIM, N_NEURONS, LOAD_WEIGHT)
 	predict(new_model)
