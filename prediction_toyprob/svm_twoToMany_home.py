@@ -21,7 +21,7 @@ from sklearn.model_selection import train_test_split
 import gc
 
 #Use these config only in main
-BATCH_SIZE = 32
+BATCH_SIZE = 1
 PRED_BATCH_SIZE = 1
 TIMESTEP_IN = 2
 TIMESTEP_OUT = 10
@@ -60,55 +60,55 @@ def generate_sincos():
 	for j in range(NUM_BATCH): 
 		for i in xrange(batch_size):
 			# x1 = 0.8*np.cos(t) 
-			# x2 = 0.8*np.sin(t)
+			# x2 = 0.8*np.sin(t) 
 			if i<n:
-				x1 = 0.8*np.cos(t) + np.random.normal(-0.04, 0.04, np.shape(t) ) #random.normal(mu, sig, )
-				x2 = 0.8*np.sin(t) + np.random.normal(-0.04, 0.04, np.shape(t) )
+				x1 = 0.8*np.cos(t) #+ np.random.normal(-0.04, 0.04, np.shape(t) ) #random.normal(mu, sig, )
+				x2 = 0.8*np.sin(t) #+ np.random.normal(-0.04, 0.04, np.shape(t) )
 			elif i<2*n:
-				x1 = 0.7*np.cos(t) + np.random.normal(-0.015, 0.015, np.shape(t) )
-				x2 = 0.7*np.sin(t) + np.random.normal(-0.015, 0.015, np.shape(t) )        
+				x1 = 0.8*np.cos(t) #+ np.random.normal(-0.015, 0.015, np.shape(t) )
+				x2 = 0.8*np.sin(t) #+ np.random.normal(-0.015, 0.015, np.shape(t) )        
 			elif i<3*n:
-				x1 = 0.8*np.cos(t) + np.random.normal(-0.025, 0.025, np.shape(t) )
-				x2 = 0.8*np.sin(t) + np.random.normal(-0.025, 0.025, np.shape(t) )        
+				x1 = 0.8*np.cos(t) #+ np.random.normal(-0.025, 0.025, np.shape(t) )
+				x2 = 0.8*np.sin(t) #+ np.random.normal(-0.025, 0.025, np.shape(t) )        
 			elif i<4*n:
-				x1 = 0.75*np.cos(t) + np.random.normal(-0.05, 0.05, np.shape(t) ) - 0.03
-				x2 = 0.75*np.sin(t) + np.random.normal(-0.05, 0.05, np.shape(t) ) - 0.03       
+				x1 = 0.8*np.cos(t) #+ np.random.normal(-0.05, 0.05, np.shape(t) ) #- 0.03
+				x2 = 0.8*np.sin(t) #+ np.random.normal(-0.05, 0.05, np.shape(t) ) #- 0.03       
 			elif i<5*n:
-				x1 = 0.8*np.cos(t) + np.random.normal(-0.03, 0.03, np.shape(t) ) + 0.03
-				x2 = 0.8*np.sin(t) + np.random.normal(-0.03, 0.03, np.shape(t) ) + 0.03        
+				x1 = 0.8*np.cos(t) #+ np.random.normal(-0.03, 0.03, np.shape(t) ) #+ 0.03
+				x2 = 0.8*np.sin(t) #+ np.random.normal(-0.03, 0.03, np.shape(t) ) #+ 0.03        
 			elif i<6*n:
-				x1 = 0.78*np.cos(t) - 0.01
-				x2 = 0.78*np.sin(t) - 0.01     
+				x1 = 0.8*np.cos(t) #- 0.01
+				x2 = 0.8*np.sin(t) #- 0.01     
 			elif i<7*n:
-				x1 = 0.83*np.cos(t) + np.random.normal(-0.02, 0.02, np.shape(t) ) - 0.02
-				x2 = 0.83*np.sin(t) + np.random.normal(-0.02, 0.02, np.shape(t) ) - 0.02       
+				x1 = 0.8*np.cos(t) #+ np.random.normal(-0.02, 0.02, np.shape(t) ) #- 0.02
+				x2 = 0.8*np.sin(t) #+ np.random.normal(-0.02, 0.02, np.shape(t) ) #- 0.02       
 			elif i<8*n:
-				x1 = 0.8*np.cos(t) + np.random.normal(-0.01, 0.01, np.shape(t) )
-				x2 = 0.8*np.sin(t) + np.random.normal(-0.01, 0.01, np.shape(t) )        
+				x1 = 0.8*np.cos(t) #+ np.random.normal(-0.01, 0.01, np.shape(t) )
+				x2 = 0.8*np.sin(t) #+ np.random.normal(-0.01, 0.01, np.shape(t) )        
 			elif i<9*n:
-				x1 = 0.83*np.cos(t) + np.random.normal(-0.035, 0.035, np.shape(t) )
-				x2 = 0.83*np.sin(t) + np.random.normal(-0.035, 0.035, np.shape(t) )        
+				x1 = 0.8*np.cos(t) #+ np.random.normal(-0.035, 0.035, np.shape(t) )
+				x2 = 0.8*np.sin(t) #+ np.random.normal(-0.035, 0.035, np.shape(t) )        
 			elif i<10*n:
 				x1 = 0.8*np.cos(t) 
 				x2 = 0.8*np.sin(t)         
 			elif i<11*n:
-				x1 = 0.8*np.cos(t) + 0.01
-				x2 = 0.8*np.sin(t) + 0.01    
+				x1 = 0.8*np.cos(t) #+ 0.01
+				x2 = 0.8*np.sin(t) #+ 0.01    
 			elif i<12*n:
-				x1 = 0.85*np.cos(t) + 0.01
-				x2 = 0.85*np.sin(t) + 0.01
+				x1 = 0.8*np.cos(t) #+ 0.01
+				x2 = 0.8*np.sin(t) #+ 0.01
 			elif i<13*n:
-				x1 = 0.8*np.cos(t) + np.random.normal(-0.02, 0.02, np.shape(t) )
-				x2 = 0.8*np.sin(t) + np.random.normal(-0.02, 0.02, np.shape(t) )
+				x1 = 0.8*np.cos(t) #+ np.random.normal(-0.02, 0.02, np.shape(t) )
+				x2 = 0.8*np.sin(t) #+ np.random.normal(-0.02, 0.02, np.shape(t) )
 			elif i<14*n:
-				x1 = 0.8*np.cos(t) + np.random.normal(-0.012, 0.012, np.shape(t) ) + 0.05
-				x2 = 0.8*np.sin(t) + np.random.normal(-0.012, 0.012, np.shape(t) ) + 0.05      
+				x1 = 0.8*np.cos(t) #+ np.random.normal(-0.012, 0.012, np.shape(t) ) #+ 0.05
+				x2 = 0.8*np.sin(t) #+ np.random.normal(-0.012, 0.012, np.shape(t) ) #+ 0.05      
 			elif i<15*n:
-				x1 = 0.72*np.cos(t) + np.random.normal(-0.023, 0.023, np.shape(t) ) - 0.05
-				x2 = 0.72*np.sin(t) + np.random.normal(-0.023, 0.023, np.shape(t) ) - 0.05
+				x1 = 0.8*np.cos(t) #+ np.random.normal(-0.023, 0.023, np.shape(t) ) #- 0.05
+				x2 = 0.8*np.sin(t) #+ np.random.normal(-0.023, 0.023, np.shape(t) ) #- 0.05
 			elif i<16*n:
-				x1 = 0.8*np.cos(t) + np.random.normal(-0.018, 0.018, np.shape(t) )
-				x2 = 0.8*np.sin(t) + np.random.normal(-0.018, 0.018, np.shape(t) )        
+				x1 = 0.8*np.cos(t) #+ np.random.normal(-0.018, 0.018, np.shape(t) )
+				x2 = 0.8*np.sin(t) #+ np.random.normal(-0.018, 0.018, np.shape(t) )        
 			X1.append(x1)
 			X2.append(x2)
 	X1 = np.array(X1)
@@ -297,7 +297,7 @@ def main():
 	# np.random.seed(3334)
 	#train phase
 	lstm_model = define_network(BATCH_SIZE, TIMESTEP_IN, INPUT_DIM, N_NEURONS, False)
-	lstm_model = fit_lstm(lstm_model, X_train, X_test, y_train, y_test)
+	# lstm_model = fit_lstm(lstm_model, X_train, X_test, y_train, y_test)
 	#predict phase
 	new_model = define_network(PRED_BATCH_SIZE, TIMESTEP_IN, INPUT_DIM, N_NEURONS, LOAD_WEIGHT)
 	predict(new_model)

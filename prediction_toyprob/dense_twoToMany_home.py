@@ -30,7 +30,7 @@ NB_EPOCH = 500
 N_NEURONS = TIMESTEP_OUT
 TEST_SHIFT = 0
 LOAD_WEIGHT = True
-WEIGHT_FILE = './models/stateful-OneToMany-tanh2.h5'
+WEIGHT_FILE = './models/dense-twoToMany-tanh.h5'
 PLOT = True
 NUM_BATCH = 100 #Total #samples = Num_batch x Batch_size
 
@@ -138,8 +138,9 @@ def generate_sincos():
 
 def define_network(batch_size, timesteps, input_dim, n_neurons, load_weight=False):
 	model = Sequential()
-	model.add(LSTM(n_neurons, batch_input_shape=(batch_size, timesteps, input_dim),
-					stateful=False, activation='tanh'))
+	# model.add(LSTM(n_neurons, batch_input_shape=(batch_size, timesteps, input_dim),
+	# 				stateful=False, activation='tanh'))
+	model.add(Dense(), activation='tanh')
 	if load_weight:
 		model.load_weights(WEIGHT_FILE)
 	#optimizer = RMSprop(lr=0.001)#, rho=0.9, epsilon=1e-08, decay=0.0001, clipvalue=10)

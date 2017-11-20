@@ -25,12 +25,12 @@ BATCH_SIZE = 32
 PRED_BATCH_SIZE = 1
 TIMESTEP_IN = 2
 TIMESTEP_OUT = 10
-INPUT_DIM = 1
+INPUT_DIM = 2
 NB_EPOCH = 500
 N_NEURONS = TIMESTEP_OUT
 TEST_SHIFT = 0
 LOAD_WEIGHT = True
-WEIGHT_FILE = './models/stateful-OneToMany-tanh2.h5'
+WEIGHT_FILE = './models/stateful-twoToMany-tanh-2D.h5'
 PLOT = True
 NUM_BATCH = 100 #Total #samples = Num_batch x Batch_size
 
@@ -63,52 +63,148 @@ def generate_sincos():
 			# x2 = 0.8*np.sin(t)
 			if i<n:
 				x1 = 0.8*np.cos(t) + np.random.normal(-0.04, 0.04, np.shape(t) ) #random.normal(mu, sig, )
-				x2 = 0.8*np.sin(t) + np.random.normal(-0.04, 0.04, np.shape(t) )
+				x2 = 0.9*np.sin(8*t) #+ np.random.normal(-0.04, 0.04, np.shape(t) )
+				x2 = x2[0:7]
+				pad = np.zeros(46,dtype=float32)
+				x2 = np.concatenate((pad, x2))
+				pad = np.zeros(47,dtype=float32)
+				x2 = np.concatenate((x2, pad))
+				x2 = x2 + np.random.normal(-0.01, 0.01, np.shape(t))
 			elif i<2*n:
 				x1 = 0.7*np.cos(t) + np.random.normal(-0.015, 0.015, np.shape(t) )
-				x2 = 0.7*np.sin(t) + np.random.normal(-0.015, 0.015, np.shape(t) )        
+				x2 = 0.9*np.sin(10*t) #+ np.random.normal(-0.015, 0.015, np.shape(t) )       
+				x2 = x2[0:4]
+				pad = np.zeros(50,dtype=float32)
+				x2 = np.concatenate((pad, x2))
+				pad = np.zeros(46,dtype=float32)
+				x2 = np.concatenate((x2, pad))
+				x2 = x2 + np.random.normal(-0.01, 0.01, np.shape(t))         
 			elif i<3*n:
 				x1 = 0.8*np.cos(t) + np.random.normal(-0.025, 0.025, np.shape(t) )
-				x2 = 0.8*np.sin(t) + np.random.normal(-0.025, 0.025, np.shape(t) )        
+				x2 = 0.9*np.sin(10*t) #+ np.random.normal(-0.015, 0.015, np.shape(t) )       
+				x2 = x2[0:5]
+				pad = np.zeros(46,dtype=float32)
+				x2 = np.concatenate((pad, x2))
+				pad = np.zeros(49,dtype=float32)
+				x2 = np.concatenate((x2, pad))
+				x2 = x2 + np.random.normal(-0.01, 0.01, np.shape(t))     
 			elif i<4*n:
 				x1 = 0.75*np.cos(t) + np.random.normal(-0.05, 0.05, np.shape(t) ) - 0.03
-				x2 = 0.75*np.sin(t) + np.random.normal(-0.05, 0.05, np.shape(t) ) - 0.03       
+				x2 = 0.9*np.sin(10*t) #+ np.random.normal(-0.015, 0.015, np.shape(t) )       
+				x2 = x2[0:5]
+				pad = np.zeros(47,dtype=float32)
+				x2 = np.concatenate((pad, x2))
+				pad = np.zeros(48,dtype=float32)
+				x2 = np.concatenate((x2, pad))
+				x2 = x2 + np.random.normal(-0.01, 0.01, np.shape(t))   
 			elif i<5*n:
 				x1 = 0.8*np.cos(t) + np.random.normal(-0.03, 0.03, np.shape(t) ) + 0.03
-				x2 = 0.8*np.sin(t) + np.random.normal(-0.03, 0.03, np.shape(t) ) + 0.03        
+				x2 = 0.9*np.sin(10*t) #+ np.random.normal(-0.015, 0.015, np.shape(t) )       
+				x2 = x2[0:5]
+				pad = np.zeros(48,dtype=float32)
+				x2 = np.concatenate((pad, x2))
+				pad = np.zeros(47,dtype=float32)
+				x2 = np.concatenate((x2, pad))
+				x2 = x2 + np.random.normal(-0.01, 0.01, np.shape(t))   
 			elif i<6*n:
 				x1 = 0.78*np.cos(t) - 0.01
-				x2 = 0.78*np.sin(t) - 0.01     
+				x2 = 0.85*np.sin(10*t) #+ np.random.normal(-0.015, 0.015, np.shape(t) )       
+				x2 = x2[0:5]
+				pad = np.zeros(49,dtype=float32)
+				x2 = np.concatenate((pad, x2))
+				pad = np.zeros(46,dtype=float32)
+				x2 = np.concatenate((x2, pad))
+				x2 = x2 + np.random.normal(-0.01, 0.01, np.shape(t))   
 			elif i<7*n:
 				x1 = 0.83*np.cos(t) + np.random.normal(-0.02, 0.02, np.shape(t) ) - 0.02
-				x2 = 0.83*np.sin(t) + np.random.normal(-0.02, 0.02, np.shape(t) ) - 0.02       
+				x2 = 0.87*np.sin(10*t) #+ np.random.normal(-0.015, 0.015, np.shape(t) )       
+				x2 = x2[0:5]
+				pad = np.zeros(48,dtype=float32)
+				x2 = np.concatenate((pad, x2))
+				pad = np.zeros(47,dtype=float32)
+				x2 = np.concatenate((x2, pad))
+				x2 = x2 + np.random.normal(-0.01, 0.01, np.shape(t))   
 			elif i<8*n:
 				x1 = 0.8*np.cos(t) + np.random.normal(-0.01, 0.01, np.shape(t) )
-				x2 = 0.8*np.sin(t) + np.random.normal(-0.01, 0.01, np.shape(t) )        
+				x2 = 0.88*np.sin(10*t) #+ np.random.normal(-0.015, 0.015, np.shape(t) )       
+				x2 = x2[0:5]
+				pad = np.zeros(49,dtype=float32)
+				x2 = np.concatenate((pad, x2))
+				pad = np.zeros(46,dtype=float32)
+				x2 = np.concatenate((x2, pad))
+				x2 = x2 + np.random.normal(-0.01, 0.01, np.shape(t))   
 			elif i<9*n:
 				x1 = 0.83*np.cos(t) + np.random.normal(-0.035, 0.035, np.shape(t) )
-				x2 = 0.83*np.sin(t) + np.random.normal(-0.035, 0.035, np.shape(t) )        
+				x2 = 0.9*np.sin(8*t) #+ np.random.normal(-0.04, 0.04, np.shape(t) )
+				x2 = x2[0:7]
+				pad = np.zeros(45,dtype=float32)
+				x2 = np.concatenate((pad, x2))
+				pad = np.zeros(48,dtype=float32)
+				x2 = np.concatenate((x2, pad))
+				x2 = x2 + np.random.normal(-0.01, 0.01, np.shape(t))
 			elif i<10*n:
 				x1 = 0.8*np.cos(t) 
-				x2 = 0.8*np.sin(t)         
+				x2 = 0.9*np.sin(8*t) #+ np.random.normal(-0.04, 0.04, np.shape(t) )
+				x2 = x2[0:7]
+				pad = np.zeros(47,dtype=float32)
+				x2 = np.concatenate((pad, x2))
+				pad = np.zeros(46,dtype=float32)
+				x2 = np.concatenate((x2, pad))
+				x2 = x2 + np.random.normal(-0.01, 0.01, np.shape(t))
 			elif i<11*n:
 				x1 = 0.8*np.cos(t) + 0.01
-				x2 = 0.8*np.sin(t) + 0.01    
+				x2 = 0.9*np.sin(8*t) #+ np.random.normal(-0.04, 0.04, np.shape(t) )
+				x2 = x2[0:7]
+				pad = np.zeros(48,dtype=float32)
+				x2 = np.concatenate((pad, x2))
+				pad = np.zeros(45,dtype=float32)
+				x2 = np.concatenate((x2, pad))
+				x2 = x2 + np.random.normal(-0.01, 0.01, np.shape(t))
 			elif i<12*n:
 				x1 = 0.85*np.cos(t) + 0.01
-				x2 = 0.85*np.sin(t) + 0.01
+				x2 = 0.85*np.sin(8*t) #+ np.random.normal(-0.04, 0.04, np.shape(t) )
+				x2 = x2[0:7]
+				pad = np.zeros(45,dtype=float32)
+				x2 = np.concatenate((pad, x2))
+				pad = np.zeros(48,dtype=float32)
+				x2 = np.concatenate((x2, pad))
+				x2 = x2 + np.random.normal(-0.01, 0.01, np.shape(t))
 			elif i<13*n:
 				x1 = 0.8*np.cos(t) + np.random.normal(-0.02, 0.02, np.shape(t) )
-				x2 = 0.8*np.sin(t) + np.random.normal(-0.02, 0.02, np.shape(t) )
+				x2 = 0.85*np.sin(8*t) #+ np.random.normal(-0.04, 0.04, np.shape(t) )
+				x2 = x2[0:7]
+				pad = np.zeros(47,dtype=float32)
+				x2 = np.concatenate((pad, x2))
+				pad = np.zeros(46,dtype=float32)
+				x2 = np.concatenate((x2, pad))
+				x2 = x2 + np.random.normal(-0.01, 0.01, np.shape(t))
 			elif i<14*n:
 				x1 = 0.8*np.cos(t) + np.random.normal(-0.012, 0.012, np.shape(t) ) + 0.05
-				x2 = 0.8*np.sin(t) + np.random.normal(-0.012, 0.012, np.shape(t) ) + 0.05      
+				x2 = 0.85*np.sin(8*t) #+ np.random.normal(-0.04, 0.04, np.shape(t) )
+				x2 = x2[0:7]
+				pad = np.zeros(47,dtype=float32)
+				x2 = np.concatenate((pad, x2))
+				pad = np.zeros(46,dtype=float32)
+				x2 = np.concatenate((x2, pad))
+				x2 = x2 + np.random.normal(-0.01, 0.01, np.shape(t))
 			elif i<15*n:
 				x1 = 0.72*np.cos(t) + np.random.normal(-0.023, 0.023, np.shape(t) ) - 0.05
-				x2 = 0.72*np.sin(t) + np.random.normal(-0.023, 0.023, np.shape(t) ) - 0.05
+				x2 = 0.85*np.sin(8*t) #+ np.random.normal(-0.04, 0.04, np.shape(t) )
+				x2 = x2[0:7]
+				pad = np.zeros(46,dtype=float32)
+				x2 = np.concatenate((pad, x2))
+				pad = np.zeros(47,dtype=float32)
+				x2 = np.concatenate((x2, pad))
+				x2 = x2 + np.random.normal(-0.01, 0.01, np.shape(t))
 			elif i<16*n:
 				x1 = 0.8*np.cos(t) + np.random.normal(-0.018, 0.018, np.shape(t) )
-				x2 = 0.8*np.sin(t) + np.random.normal(-0.018, 0.018, np.shape(t) )        
+				x2 = 0.85*np.sin(8*t) #+ np.random.normal(-0.04, 0.04, np.shape(t) )
+				x2 = x2[0:7]
+				pad = np.zeros(48,dtype=float32)
+				x2 = np.concatenate((pad, x2))
+				pad = np.zeros(45,dtype=float32)
+				x2 = np.concatenate((x2, pad))
+				x2 = x2 + np.random.normal(-0.01, 0.01, np.shape(t))
 			X1.append(x1)
 			X2.append(x2)
 	X1 = np.array(X1)
@@ -123,9 +219,11 @@ def generate_sincos():
 	X = np.rollaxis(X, 0, 3)
 	print X.shape
 
-	# for i in range(batch_size):
-	#   pyplot.plot(X[i,:,0])
+	# pyplot.plot(X[15,:,1])
 	# pyplot.show()
+	for i in range(batch_size):
+		pyplot.plot(X[i,:,1])
+	pyplot.show()
 
 	X = X.astype('float32')
 	if INPUT_DIM==1:
