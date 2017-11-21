@@ -27,7 +27,7 @@ import gc
 #Use these config only in main
 BATCH_SIZE = 32
 PRED_BATCH_SIZE = 1
-TIMESTEP_IN = 10
+TIMESTEP_IN = 1
 TIMESTEP_OUT = 10
 INPUT_DIM = 2
 NB_EPOCH = 500
@@ -240,10 +240,17 @@ def generate_sincos():
 
 	return X
 
-def define_network(batch_size, timesteps, input_dim, n_neurons, load_weight=False):
+def define_network(batch_size, time_in, time_out, input_dim, n_neurons, load_weight=False):
 	model = Sequential()
-	model.add(LSTM(n_neurons, batch_input_shape=(batch_size, timesteps, input_dim),
-					stateful=True, return_sequences=True, return_state=True, activation='tanh'))
+	# model.add(RepeatVector(number_of_times, input_shape=input_shape))
+	# model.add(LSTM(output_size, return_sequences=True))
+	# model.add(Dense(10, batch_input_shape=(batch_size,2)))
+	model.add(RepeatVector(time_out, batch_input_shape=(batch_size, input_dim))) #assumes time_in=1
+	print model.summary()
+	model.add(LSTM(n_neurons, batch_input_shape=(batch_size, time_out, input_dim),
+					stateful=True, return_sequences=True, activation='tanh'))
+	# model.add(TimeDistributed(Dense(input_dim), input_shape=(10, input_dim)))
+	# model.add(RepeatVector(10))
 	if load_weight:
 		model.load_weights(WEIGHT_FILE)
 	#optimizer = RMSprop(lr=0.001)#, rho=0.9, epsilon=1e-08, decay=0.0001, clipvalue=10)
@@ -252,6 +259,10 @@ def define_network(batch_size, timesteps, input_dim, n_neurons, load_weight=Fals
 	loss = 'mean_squared_error'
 	model.compile(loss=loss, optimizer=optimizer)
 	print model.summary()
+	print "Inputs: {}".format(model.input_shape)
+	print "Outputs: {}".format(model.output_shape)
+	# print "Actual input: {}".format(data.shape)
+	# print "Actual output: {}".format(target.shape)
 	return model
 
 def fit_lstm(model, x_train, x_test, y_train, y_test):
@@ -376,7 +387,8 @@ def predict(new_model):
 	X = np.array(X)
 	y = np.array(y)
 	print X.shape, y.shape
-	X = X.reshape(X.shape[0], PRED_BATCH_SIZE, TIMESTEP_IN, INPUT_DIM)
+	# X = X.reshape(X.shape[0], PRED_BATCH_SIZE, TIMESTEP_IN, INPUT_DIM)
+	X = X.reshape(X.shape[0], PRED_BATCH_SIZE, INPUT_DIM) #for 1-to-many
 	rst = []
 	# x_tmp = X[0]
 	for i in range(0, X.shape[0]):
@@ -386,19 +398,20 @@ def predict(new_model):
 	print X.shape, rst.shape
 
 	#PLOT
-	# pyplot.plot(X[:,0,:,0]) #Original Plot for OneToMany
+	pyplot.plot(X[:,:,0]) #Original Plot for OneToMany
 	# pyplot.plot(X[:,:]) #Dense Plot
 	for i in range(0, rst.shape[0]):
-		xaxis = [x for x in range(i, i+TIMESTEP_IN)]
-		pyplot.plot(xaxis, X[i,0,:,0], color='blue')
+		# xaxis = [x for x in range(i, i+TIMESTEP_IN)]
+		# pyplot.plot(xaxis, X[i,0,:,0], color='blue')
 		# pyplot.plot(xaxis, X[i,0,:], color='blue') #2D Dense Plot
 		xaxis2 = [w for w in range(i+TIMESTEP_IN, i+TIMESTEP_IN+TIMESTEP_OUT)]
 		pyplot.plot(xaxis2 ,rst[i,0,:,0], color='red')
 		# pyplot.plot(xaxis2 ,rst[i,0,:], color='red') #2D Dense Plot
 	pyplot.show()
+	pyplot.plot(X[:,:,1]) #Original Plot for OneToMany
 	for i in range(0, rst.shape[0]):
-		xaxis = [x for x in range(i, i+TIMESTEP_IN)]
-		pyplot.plot(xaxis, X[i,0,:,1], color='blue')
+		# xaxis = [x for x in range(i, i+TIMESTEP_IN)]
+		# pyplot.plot(xaxis, X[i,0,:,1], color='blue')
 		# pyplot.plot(xaxis, X[i,0,:], color='blue') #2D Dense Plot
 		xaxis2 = [w for w in range(i+TIMESTEP_IN, i+TIMESTEP_IN+TIMESTEP_OUT)]
 		pyplot.plot(xaxis2 ,rst[i,0,:,1], color='red')
@@ -424,6 +437,11 @@ def main():
 	X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42)
 	print X_train.shape, X_test.shape, y_train.shape, y_test.shape
 
+	#for one-to-many only
+	X_train = X_train.reshape(X_train.shape[0],X_train.shape[1],INPUT_DIM)
+	X_test = X_test.reshape(X_test.shape[0],X_test.shape[1],INPUT_DIM)
+	print X_train.shape, X_test.shape, y_train.shape, y_test.shape
+
 	# for i in range(X_test.shape[0]):
 	#   pyplot.plot(X_test[i,:,:,0])
  #  	  pyplot.plot(X_test[i,:,:,1])
@@ -433,12 +451,12 @@ def main():
 	#   pyplot.plot(y_test[i,:,:,1])
 	# pyplot.show()
 
-	# np.random.seed(3334)
 	#train phase
-	lstm_model = define_network(BATCH_SIZE, TIMESTEP_IN, INPUT_DIM, N_NEURONS, False)
-	lstm_model = fit_lstm(lstm_model, X_train, X_test, y_train, y_test)
+	lstm_model = define_network(BATCH_SIZE, TIMESTEP_IN, TIMESTEP_OUT, INPUT_DIM, N_NEURONS, False)
+	np.random.seed(7)
+	# lstm_model = fit_lstm(lstm_model, X_train, X_test, y_train, y_test)
 	#predict phase
-	new_model = define_network(PRED_BATCH_SIZE, TIMESTEP_IN, INPUT_DIM, N_NEURONS, LOAD_WEIGHT)
+	new_model = define_network(PRED_BATCH_SIZE, TIMESTEP_IN, TIMESTEP_OUT, INPUT_DIM, N_NEURONS, LOAD_WEIGHT)
 	predict(new_model)
 
 if __name__ == "__main__":
