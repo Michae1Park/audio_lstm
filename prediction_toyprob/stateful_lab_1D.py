@@ -34,7 +34,7 @@ NB_EPOCH = 500
 N_NEURONS = TIMESTEP_OUT
 TEST_SHIFT = 0
 LOAD_WEIGHT = True
-WEIGHT_FILE = './models/stateful-twoToMany-tanh-denoise.h5'
+WEIGHT_FILE = './models/stateful-tanh-denoise-1D-lab.h5'
 PLOT = True
 NUM_BATCH = 100 #Total #samples = Num_batch x Batch_size
 

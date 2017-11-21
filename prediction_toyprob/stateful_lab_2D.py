@@ -34,7 +34,7 @@ NB_EPOCH = 500
 N_NEURONS = INPUT_DIM
 TEST_SHIFT = 0
 LOAD_WEIGHT = True
-WEIGHT_FILE = './models/stateful-twoToMany-tanh-denoise-2D.h5'
+WEIGHT_FILE = './models/stateful-tanh-denoise-2D-lab.h5'
 PLOT = True
 NUM_BATCH = 100 #Total #samples = Num_batch x Batch_size
 
@@ -243,7 +243,7 @@ def generate_sincos():
 def define_network(batch_size, timesteps, input_dim, n_neurons, load_weight=False):
 	model = Sequential()
 	model.add(LSTM(n_neurons, batch_input_shape=(batch_size, timesteps, input_dim),
-					stateful=True, return_sequences=True, return_state=True, activation='tanh'))
+					stateful=True, return_sequences=True, activation='tanh'))
 	if load_weight:
 		model.load_weights(WEIGHT_FILE)
 	#optimizer = RMSprop(lr=0.001)#, rho=0.9, epsilon=1e-08, decay=0.0001, clipvalue=10)
@@ -354,6 +354,7 @@ def predict(new_model):
 	x2 = np.concatenate((x2, pad))
 	x1 = np.concatenate(([0.82,0.82,0.82,0.82,0.82,0.82,0.82,0.82,0.82,0.82,0.82,0.82,0.82,0.82,0.82,0.82,0.82,0.82,0.82,0.82,0.82,0.82,0.82,0.82], x1))
 	x2 = np.concatenate(([0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00], x2))	# Test3 -- same as training
+	# Test3
 	# x1 = 0.8*np.cos(t)
 	# x2 = 0.8*np.sin(8*t) 
 	# x2 = x2[0:7]
@@ -361,6 +362,9 @@ def predict(new_model):
 	# x2 = np.concatenate((pad, x2))
 	# pad = np.zeros(45,dtype=float32)
 	# x2 = np.concatenate((x2, pad))
+	# Test4 
+	# x1 = 1.1*cos(8*t) + 1
+	# x2 = 1.1*sin(8*t) - 2
 	#--------------------------------------
 	dataset.append(x1)
 	dataset.append(x2)
@@ -436,7 +440,7 @@ def main():
 	# np.random.seed(3334)
 	#train phase
 	lstm_model = define_network(BATCH_SIZE, TIMESTEP_IN, INPUT_DIM, N_NEURONS, False)
-	lstm_model = fit_lstm(lstm_model, X_train, X_test, y_train, y_test)
+	# lstm_model = fit_lstm(lstm_model, X_train, X_test, y_train, y_test)
 	#predict phase
 	new_model = define_network(PRED_BATCH_SIZE, TIMESTEP_IN, INPUT_DIM, N_NEURONS, LOAD_WEIGHT)
 	predict(new_model)
