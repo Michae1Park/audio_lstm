@@ -20,23 +20,25 @@ import matplotlib.animation as animation
 from sklearn.model_selection import train_test_split
 import gc
 
-# Added Technique
-# noise added for X, no noise for y
-#
+################################################
+# Trick from 1D to 2D is flattening!!!!!
+# First Check the base case 2-10 which worked well before
+# Then Convert it into flattened version
+################################################
 
 #Use these config only in main
-BATCH_SIZE = 256
+BATCH_SIZE = 32
 PRED_BATCH_SIZE = 1
 TIMESTEP_IN = 1
 TIMESTEP_OUT = 10
 INPUT_DIM = 2
 NB_EPOCH = 500
-N_NEURONS = INPUT_DIM
+N_NEURONS = TIMESTEP_OUT
 TEST_SHIFT = 0
 LOAD_WEIGHT = True
-WEIGHT_FILE = './models/stateful-tanh-denoise-2D-lab.h5'
+WEIGHT_FILE = './models/stateful-tanh-denoise-1D-2D-lab.h5'
 PLOT = True
-NUM_BATCH = 200 #Total #samples = Num_batch x Batch_size
+NUM_BATCH = 100 #Total #samples = Num_batch x Batch_size
 
 def data_generator():
 	dataset = generate_sincos() 
@@ -68,10 +70,6 @@ def add_noise(X):
 	# for j in range(NUM_BATCH): 
 	# 	for i in range(batch_size):
 	# 	  pyplot.plot(X[i,:,:,0])
-	# pyplot.show()
-	# for j in range(NUM_BATCH): 
-	# 	for i in range(batch_size):
-	# 	  pyplot.plot(X[i,:,:,1])
 	# pyplot.show()
 	return X
 
@@ -233,7 +231,7 @@ def generate_sincos():
 
 	X = X.astype('float32')
 	if INPUT_DIM==1:
-		X = X[:,:,0] #0=cos, 1=sin
+		X = X[:,:,1] #0=cos, 1=sin
 		X = X.reshape(X.shape[0], X.shape[1], 1)
 		print X.shape
 	print 'end of generate_sincos func'
@@ -241,22 +239,35 @@ def generate_sincos():
 	return X
 
 def define_network(batch_size, time_in, time_out, input_dim, n_neurons, load_weight=False):
-	flatten_out = input_dim * time_out
 	model = Sequential()
-	model.add(LSTM(10, batch_input_shape=(batch_size, time_in, input_dim), activation='tanh', return_sequences=True))
-	model.add(LSTM(10, activation='tanh', return_sequences=True))
-	model.add(TimeDistributed(Dense(flatten_out, activation='linear')))
-	
-	# model.add(LSTM(n_neurons, batch_input_shape=(batch_size, timesteps, input_dim),
-	# 				stateful=True, return_sequences=True, activation='tanh'))
+	model.add(LSTM(input_dim*time_out, batch_input_shape=(batch_size, time_in, input_dim),
+					stateful=True, activation='tanh'))
 	if load_weight:
 		model.load_weights(WEIGHT_FILE)
-
-	model.compile(loss='mse', optimizer='rmsprop', metrics=['accuracy'])
+	optimizer = optimizers.Adam(lr=0.001)
+	loss = 'mean_squared_error'
+	model.compile(loss=loss, optimizer=optimizer)
 	print model.summary()
 	print "Inputs: {}".format(model.input_shape)
 	print "Outputs: {}".format(model.output_shape)
 	return model
+
+	# flatten_out = input_dim * time_out
+	# model = Sequential()
+	# model.add(LSTM(10, batch_input_shape=(batch_size, time_in, input_dim), activation='tanh', return_sequences=True))
+	# model.add(LSTM(10, activation='tanh', return_sequences=True))
+	# model.add(TimeDistributed(Dense(flatten_out, activation='linear')))
+	
+	# # model.add(LSTM(n_neurons, batch_input_shape=(batch_size, timesteps, input_dim),
+	# # 				stateful=True, return_sequences=True, activation='tanh'))
+	# if load_weight:
+	# 	model.load_weights(WEIGHT_FILE)
+
+	# model.compile(loss='mse', optimizer='rmsprop', metrics=['accuracy'])
+	# print model.summary()
+	# print "Inputs: {}".format(model.input_shape)
+	# print "Outputs: {}".format(model.output_shape)
+	# return model
 
 def fit_lstm(model, x_train, x_test, y_train, y_test):
 	wait         = 0
@@ -374,7 +385,7 @@ def predict(new_model):
 	dataset.append(x2)
 	dataset = np.array(dataset)
 	print dataset.shape
-	# dataset = dataset[0] #[1,100]
+	# dataset = dataset[1] #[1,100]
 	dataset = np.swapaxes(dataset, 0,1)
 	print dataset.shape
 	X, y = [], []
@@ -393,8 +404,10 @@ def predict(new_model):
 	rst = np.array(rst)
 	print 'results shape'
 	print X.shape, rst.shape
-	rst = rst.reshape(rst.shape[0], rst.shape[1], TIMESTEP_OUT, INPUT_DIM)
-	print rst.shape
+
+	if INPUT_DIM > 1:
+		rst = rst.reshape(rst.shape[0], rst.shape[1], TIMESTEP_OUT, INPUT_DIM)
+		print rst.shape
 
 	#PLOT
 	pyplot.plot(X[:,0,:,0]) #Original Plot for OneToMany
@@ -423,18 +436,16 @@ def main():
 	'''
 	X, y = data_generator() #generates entire dataset to be used shape is listed above
 	X = X.reshape(X.shape[0],X.shape[1],X.shape[2],INPUT_DIM)
-	y = y.reshape(y.shape[0],y.shape[1],y.shape[2],INPUT_DIM)
+	y = y.reshape(y.shape[0],y.shape[1],y.shape[2],INPUT_DIM) #comment input_dim for 1D
 	X = np.swapaxes(X, 0, 1)
 	y = np.swapaxes(y, 0, 1)
-	# X = np.swapaxes(X, 2, 3)
-	# y = np.swapaxes(y, 2, 3)
 	print 'in main'
 	print X.shape, y.shape
 
 	X = add_noise(X)
 
 	# flatten data to shape into lstm
-	y = y.reshape(y.shape[0], y.shape[1], 1, y.shape[2]*y.shape[3])
+	y = y.reshape(y.shape[0], y.shape[1], y.shape[2]*y.shape[3])
 	print y.shape
 
 	X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42)
@@ -442,11 +453,9 @@ def main():
 
 	# for i in range(X_test.shape[0]):
 	#   pyplot.plot(X_test[i,:,:,0])
- #  	  pyplot.plot(X_test[i,:,:,1])
 	# pyplot.show()
 	# for i in range(y_test.shape[0]):
- #  	  pyplot.plot(y_test[i,:,:,0])
-	#   pyplot.plot(y_test[i,:,:,1])
+ #  	  pyplot.plot(y_test[i,:,:])
 	# pyplot.show()
 
 	# np.random.seed(3334)
