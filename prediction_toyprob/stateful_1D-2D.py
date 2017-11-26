@@ -364,23 +364,23 @@ def predict(new_model):
 	# x1 = 0.8*np.cos(t+TEST_SHIFT) + np.random.normal(-0.033, 0.033, np.shape(t) ) #+ 0.05
 	# x2 = 0.8*np.sin(t+TEST_SHIFT) + np.random.normal(-0.033, 0.033, np.shape(t) ) #+ 0.05
 	# Test2
-	x1 = 0.82*np.cos(t)
-	x2 = 0.82*np.sin(8*t) 
-	x2 = x2[0:7]
-	pad = np.zeros(48,dtype=float32)
-	x2 = np.concatenate((pad, x2))
-	pad = np.zeros(45,dtype=float32)
-	x2 = np.concatenate((x2, pad))
-	x1 = np.concatenate(([0.82,0.82,0.82,0.82,0.82,0.82,0.82,0.82,0.82,0.82,0.82,0.82,0.82,0.82,0.82,0.82,0.82,0.82,0.82,0.82,0.82,0.82,0.82,0.82], x1))
-	x2 = np.concatenate(([0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00], x2))	# Test3 -- same as training
-	# Test3
-	# x1 = 0.8*np.cos(t)
-	# x2 = 0.8*np.sin(8*t) 
+	# x1 = 0.82*np.cos(t)
+	# x2 = 0.82*np.sin(8*t) 
 	# x2 = x2[0:7]
 	# pad = np.zeros(48,dtype=float32)
 	# x2 = np.concatenate((pad, x2))
 	# pad = np.zeros(45,dtype=float32)
 	# x2 = np.concatenate((x2, pad))
+	# x1 = np.concatenate(([0.82,0.82,0.82,0.82,0.82,0.82,0.82,0.82,0.82,0.82,0.82,0.82,0.82,0.82,0.82,0.82,0.82,0.82,0.82,0.82,0.82,0.82,0.82,0.82], x1))
+	# x2 = np.concatenate(([0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00], x2))	# Test3 -- same as training
+	# Test3
+	x1 = 0.8*np.cos(t)
+	x2 = 0.8*np.sin(8*t) 
+	x2 = x2[0:7]
+	pad = np.zeros(48,dtype=float32)
+	x2 = np.concatenate((pad, x2))
+	pad = np.zeros(45,dtype=float32)
+	x2 = np.concatenate((x2, pad))
 	# Test4 
 	# x1 = 1.1*cos(8*t) + 1
 	# x2 = 1.1*sin(8*t) - 2
